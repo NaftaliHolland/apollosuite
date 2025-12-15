@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from core.models import School
+#from core.models import School
 
 
 class CustomUserManager(BaseUserManager):
@@ -44,7 +44,7 @@ class CustomUserManager(BaseUserManager):
 
 
 class Role(models.Model):
-    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='roles', null=True, blank=True)
+    school = models.ForeignKey('core.School', on_delete=models.CASCADE, related_name='roles', null=True, blank=True)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -64,7 +64,7 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True, null=True, blank=True)
     phone_number = models.CharField(max_length=20, unique=True)
 
-    schools = models.ManyToManyField(School, related_name="users", blank=True)
+    schools = models.ManyToManyField('core.School', related_name="users", blank=True)
     roles = models.ManyToManyField(Role, related_name='users')
     status = models.CharField(max_length=50, choices=USER_STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
