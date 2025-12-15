@@ -1,8 +1,9 @@
-from core.models import School
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
+
+from core.models import School
 
 
 class CustomUserManager(BaseUserManager):
@@ -18,10 +19,14 @@ class CustomUserManager(BaseUserManager):
         # What does normalize_email do?? Can I write that for my phone number??
         email = self.normalize_email(email)
         roles = extra_fields.pop("roles")
+        schools = extra_fields.pop("schools")
         user = self.model(email=email, phone_number=phone_number, **extra_fields)
         user.set_password(password)
         user.save()
+
         user.roles.set(roles)
+        user.schools.set(schools)
+
         return user
 
     def create_superuser(self, phone_number, password, email=None, **extra_fields):
@@ -59,7 +64,7 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True, null=True, blank=True)
     phone_number = models.CharField(max_length=20, unique=True)
 
-    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="users", null=True, blank=True)
+    schools = models.ManyToManyField(School, related_name="users", blank=True)
     roles = models.ManyToManyField(Role, related_name='users')
     status = models.CharField(max_length=50, choices=USER_STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(auto_now_add=True)

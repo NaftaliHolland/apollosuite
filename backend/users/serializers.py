@@ -8,14 +8,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     # TODO: Add nested serializer for role
     # TODO: Add RoleSerializer
-    # TODO: Add nested serializer for school
+    # TODO: Add nested serializer for schools
     class Meta:
         model = CustomUser
         fields = [
             'id',
             'first_name',
             'last_name',
-            'school',
+            'schools',
             'email',
             'phone_number',
             'roles',
@@ -36,7 +36,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             'password',
             'email',
             'phone_number',
-            'school',
+            'schools',
             'roles',
         ]
 
@@ -46,7 +46,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return CustomUser.objects.create_user(
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
-            school=validated_data.get("school"),
+            schools=validated_data.get("schools"),
             email=validated_data["email"],
             roles=validated_data["roles"],
             phone_number=validated_data["phone_number"],
