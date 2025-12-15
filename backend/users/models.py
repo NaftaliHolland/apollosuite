@@ -18,14 +18,16 @@ class CustomUserManager(BaseUserManager):
 
         # What does normalize_email do?? Can I write that for my phone number??
         email = self.normalize_email(email)
-        roles = extra_fields.pop("roles")
-        schools = extra_fields.pop("schools")
+        roles = extra_fields.pop("roles", None)
+        schools = extra_fields.pop("schools", None)
         user = self.model(email=email, phone_number=phone_number, **extra_fields)
         user.set_password(password)
         user.save()
 
-        user.roles.set(roles)
-        user.schools.set(schools)
+        if roles:
+            user.roles.set(roles)
+        if schools:
+            user.schools.set(schools)
 
         return user
 
@@ -65,7 +67,7 @@ class CustomUser(AbstractUser):
     phone_number = models.CharField(max_length=20, unique=True)
 
     schools = models.ManyToManyField('core.School', related_name="users", blank=True)
-    roles = models.ManyToManyField(Role, related_name='users')
+    roles = models.ManyToManyField(Role, related_name='users', blank=True)
     status = models.CharField(max_length=50, choices=USER_STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

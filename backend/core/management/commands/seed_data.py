@@ -3,6 +3,7 @@ from datetime import datetime
 from core.models import MapLocation, School
 from django.core.management.base import BaseCommand
 from django.db import transaction
+
 from users.models import CustomUser, Role
 
 
@@ -106,10 +107,10 @@ class Command(BaseCommand):
             first_name='John',
             last_name='Administrator',
             password='admin123',
-            school=school,
             status='active'
         )
-        admin.role.add(admin_role)
+        admin.schools.add(school)
+        admin.roles.add(admin_role)
 
         # Create teacher users
         teachers = [
@@ -136,10 +137,10 @@ class Command(BaseCommand):
                 first_name=teacher_data['first_name'],
                 last_name=teacher_data['last_name'],
                 password=teacher_data['password'],
-                school=school,
                 status='active'
             )
-            teacher.role.add(teacher_role)
+            teacher.schools.add(school)
+            teacher.roles.add(teacher_role)
 
         # Create student users
         students = [
@@ -173,10 +174,10 @@ class Command(BaseCommand):
                 first_name=student_data['first_name'],
                 last_name=student_data['last_name'],
                 password=student_data['password'],
-                school=school,
                 status='active'
             )
-            student.role.add(student_role)
+            student.schools.add(school)
+            student.roles.add(student_role)
 
         users_created = 1 + len(teachers) + len(students)
         self.stdout.write(self.style.SUCCESS(f'Created {users_created} users'))

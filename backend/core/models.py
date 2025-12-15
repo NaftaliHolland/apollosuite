@@ -55,17 +55,17 @@ class Grade(models.Model):
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='classes')
     name = models.CharField(max_length=100)
     # name should be unique per school
-    description = models.TextField()
-    streams = models.ManyToManyField(Stream, related_name='grades')
+    description = models.TextField(blank=True, null=True)
+    streams = models.ManyToManyField(Stream, related_name='grades', blank=True)
     grade_teachers = models.ManyToManyField(User, related_name='grades_managed', blank=True)
-    grade_representative = models.ManyToManyField(User, related_name='grades_representing', blank=True, help_text='parents representing classes')
+    grade_representatives = models.ManyToManyField(User, related_name='grades_representing', blank=True, help_text='parents representing classes')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['school', 'grade'],
+                fields=['school', 'name'],
                 name='unique_grade_per_school'
             )
         ]
