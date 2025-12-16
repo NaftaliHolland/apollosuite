@@ -39,6 +39,8 @@ class School(models.Model):
 class Stream(models.Model):
     name = models.CharField(max_length=100)
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='streams')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -54,7 +56,6 @@ class Stream(models.Model):
 class Grade(models.Model):
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='classes')
     name = models.CharField(max_length=100)
-    # name should be unique per school
     description = models.TextField(blank=True, null=True)
     streams = models.ManyToManyField(Stream, related_name='grades', blank=True)
     grade_teachers = models.ManyToManyField(User, related_name='grades_managed', blank=True)
