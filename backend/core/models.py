@@ -17,6 +17,7 @@ class MapLocation(models.Model):
 
 class School(models.Model):
     name = models.CharField(max_length=255)
+    # I think this should be a DateField
     year_started = models.PositiveIntegerField(validators=[MinValueValidator(1800), validate_not_in_future])
     about = models.TextField()
     website = models.URLField()
@@ -30,8 +31,6 @@ class School(models.Model):
 
     # TODO: write a validator for year started, should not be any year after this year
     # NOTE: will handle this on the frontend for now
-
-    # I need to write a validator to check that the current year is not in the future
 
     def __str__(self):
         return self.name
@@ -53,6 +52,11 @@ class Stream(models.Model):
             )
         ]
 
+    def save(self, *args, **kwargs):
+        self.name = self.name.replace(' ', '').lower()
+
+        super().save(*args, **kwargs)
+
 class Grade(models.Model):
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='classes')
     name = models.CharField(max_length=100)
@@ -71,6 +75,10 @@ class Grade(models.Model):
             )
         ]
 
+    def save(self, *args, **kwargs):
+        self.name = self.name.replace(' ', '').lower()
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} ({self.school})"
@@ -106,3 +114,91 @@ class StreamTeacher(models.Model):
 
     def __str__(self):
         return f"{self.teacher} -> {self.stream} ({self.grade})"
+
+
+class AcademicYear(models.Model):
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='academic_years')
+    name = models.CharField(max_length=255)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-start_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['school', 'name'],
+                name='unique_academic_year_per_school',
+                violation_error_code=409,
+                violation_error_message="An academic year with the same name exists"
+
+            )
+        ]
+
+    def clean(self):
+        if self.start_date >= self.end_date:
+            raise ValidationError("Academic year start date must be before end_date")
+
+    def save(self, *args, **kwargs):
+        self.name = self.name.replace(' ', '').lower()
+
+        self.full_clean()
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} - {self.start_date} : {self.end_date}"
+
+
+class Term(models.Model):
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='terms')
+    name = models.CharField(max_length=255)
+    sequence = models.PositiveSmallIntegerField()
+    start_date = models.DateField()
+    end_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['sequence']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['academic_year', 'name'],
+                name='unique_term_name_per_year'
+            )
+        ]
+
+
+
+    def clean(self): # Since I'm using DRF, I'll need to call full_clean somewhere
+        academic_year = self.academic_year
+        if self.start_date < academic_year.start_date or self.end_date > academic_year.end_date:
+            raise ValidationError(
+                'Term dates must fall within the academic year'
+            )
+
+        overlapping_terms = (
+            Term.objects.filter(academic_year=academic_year)
+            .exclude(pk=self.pk)
+            .filter(
+                start_date__lt=self.end_date,
+                end_date__gt=self.start_date
+            )
+        )
+
+        if overlapping_terms.exists():
+            raise ValidationError("Term dates overlap with another term")
+
+
+    def save(self, *args, **kwargs):
+        self.name = self.name.replace(' ', '').lower()
+
+        self.full_clean()
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.academic_year.name} - {self.name}"
+
+

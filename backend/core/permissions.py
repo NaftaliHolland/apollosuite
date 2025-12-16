@@ -12,5 +12,6 @@ class IsMemberOfSchool(BasePermission):
 
         return request.user.schools.filter(id=school_id).exists()
 
-    def has_object_permission(self, request, view, obj):
-        return obj.school.users.filter(id=request.user.id).exists()
+    #def has_object_permission(self, request, view, obj):
+        #return True
+        #return obj.school.users.filter(id=request.user.id).exists()

@@ -2,9 +2,10 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
-from .models import Grade, School, Stream
+from .models import AcademicYear, Grade, School, Stream, Term
 from .permissions import IsMemberOfSchool
-from .serializers import GradeSerializer, SchoolSerializer, StreamSerializer
+from .serializers import (AcademicYearSerializer, GradeSerializer,
+                          SchoolSerializer, StreamSerializer, TermSerializer)
 
 
 class SchoolViewSet(viewsets.ModelViewSet):
@@ -38,10 +39,6 @@ class GradeViewSet(viewsets.ModelViewSet):
             school__users=self.request.user,
         )
 
-    def perform_create(self, serializer):
-        school_id = self.kwargs["school_pk"]
-        serializer.save(school_id=school_id)
-
 class StreamViewSet(viewsets.ModelViewSet):
     serializer_class = StreamSerializer
     permission_classes = [IsAuthenticated, IsMemberOfSchool]
@@ -53,6 +50,24 @@ class StreamViewSet(viewsets.ModelViewSet):
             school__users=self.request.user,
         )
 
-    #def perform_create(self, serializer):
-    #    school_id = self.kwargs["school_pk"]
-    #    serializer.save(school_id=school_id)
+class AcademicYearViewSet(viewsets.ModelViewSet):
+    serializer_class = AcademicYearSerializer
+    permission_classes = [IsAuthenticated, IsMemberOfSchool]
+
+    def get_queryset(self):
+        school_id = self.kwargs["school_pk"]
+        return AcademicYear.objects.filter(
+            school_id=school_id,
+            school__users=self.request.user,
+        )
+
+class TermViewSet(viewsets.ModelViewSet):
+    serializer_class = TermSerializer
+    permission_classes = [IsAuthenticated, IsMemberOfSchool]
+
+    def get_queryset(self):
+        school_id = self.kwargs["school_pk"]
+        return Term.objects.filter(
+            academic_year__school_id=school_id,
+            academic_year__school__users=self.request.user,
+        )
