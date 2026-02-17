@@ -1,15 +1,17 @@
-from rest_framework.viewsets import generics
-
-from rest_framework.views import APIView
+from core.permissions import IsMemberOfSchool
+from django.contrib.auth import authenticate
+from rest_framework import status, viewsets
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from .serializers import RegisterSerializer, UserSerializer
-from .models import CustomUser
-from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
+from rest_framework.viewsets import generics
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from django.contrib.auth import authenticate
-from rest_framework import status
+
+from .models import CustomUser, StudentProfile
+from .serializers import (RegisterSerializer, StudentProfileListSerializer,
+                          StudentProfileSerializer, UserSerializer)
 
 
 class RegisterAPIView(generics.CreateAPIView):
@@ -25,18 +27,22 @@ class RegisterAPIView(generics.CreateAPIView):
 
         refresh = RefreshToken.for_user(user)
 
-        return Response({
-            'message': 'User created successfully',
-            'user': UserSerializer(user).data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-        }, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "message": "User created successfully",
+                "user": UserSerializer(user).data,
+                "tokens": {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
         phone_number = request.data.get("phone_number")
         password = request.data.get("password")
@@ -44,14 +50,52 @@ class LoginAPIView(APIView):
         user = authenticate(phone_number=phone_number, password=password)
 
         if not user:
-            return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         refresh = RefreshToken.for_user(user)
 
-        return Response({
-            "user": UserSerializer(user).data,
-            "tokens": {
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
+        return Response(
+            {
+                "user": UserSerializer(user).data,
+                "tokens": {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                },
             }
-        })
+        )
+
+
+class StudentProfileViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing student profiles.
+
+    list: Get all students
+    retrieve: Get a specific student
+    create: Create a new student
+    update: Update a student (PUT)
+    partial_update: Partially update a student (PATCH)
+    destroy: Delete a student
+    """
+
+    queryset = (
+        StudentProfile.objects.select_related("user", "grade", "stream")
+        .prefetch_related("user__schools")
+        .all()
+    )
+    serializer_class = StudentProfileSerializer
+    permission_classes = [IsAuthenticated, IsMemberOfSchool]
+
+    def get_queryset(self):
+        """
+        Optionally filter students by school.
+        Use query parameter: ?school_id=1
+        """
+        queryset = super().get_queryset()
+        school_id = self.request.query_params.get("school_id")
+
+        if school_id:
+            queryset = queryset.filter(user__schools__id=school_id)
+
+        return queryset.distinct()

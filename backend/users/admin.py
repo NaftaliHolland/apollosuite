@@ -36,7 +36,7 @@ class CustomUserAdmin(UserAdmin):
     # TODO: I need to test this out
     # Layout for the user detail/edit page
     fieldsets = (
-        (None, {"fields": ("phone_number",  "password")}),
+        (None, {"fields": ("phone_number",  "password", "schools", "other_names", "gender", "status")}),
         ("Personal Info", {"fields": ("first_name", "last_name")}),
         (
             "Permissions",

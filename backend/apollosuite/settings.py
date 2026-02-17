@@ -27,17 +27,19 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'naph.softspin.co.ke',
-    'localhost'
+    'localhost',
+    'sylvester-petalodic-streamingly.ngrok-free.dev'
 ]
 
 CORS_ALLOWED_ORIGINS = [
     'https://naph.softspin.co.ke',
+    'sylvester-petalodic-streamingly.ngrok-free.dev'
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://naph.softspin.co.ke',
+    'https://sylvester-petalodic-streamingly.ngrok-free.dev'
 ]
-
 
 INSTALLED_APPS = [
     'django.contrib.admin',
