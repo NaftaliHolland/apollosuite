@@ -78,12 +78,11 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
     partial_update: Partially update a student (PATCH)
     destroy: Delete a student
     """
-
     queryset = (
-        StudentProfile.objects.select_related("user", "grade", "stream")
-        .prefetch_related("user__schools")
+        StudentProfile.objects.select_related("school")
         .all()
     )
+
     serializer_class = StudentProfileSerializer
     permission_classes = [IsAuthenticated, IsMemberOfSchool]
 
@@ -96,6 +95,6 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
         school_id = self.request.query_params.get("school_id")
 
         if school_id:
-            queryset = queryset.filter(user__schools__id=school_id)
+            queryset = queryset.filter(school_id=school_id)
 
         return queryset.distinct()

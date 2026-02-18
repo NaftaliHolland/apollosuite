@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import CustomUserChangeForm, CustomUserCreationForm
-from .models import CustomUser
+from .models import (AdminProfile, CustomUser, ParentProfile, StaffProfile,
+                     StudentProfile, TeacherProfile)
 
 
 class CustomUserAdmin(UserAdmin):
@@ -36,7 +37,18 @@ class CustomUserAdmin(UserAdmin):
     # TODO: I need to test this out
     # Layout for the user detail/edit page
     fieldsets = (
-        (None, {"fields": ("phone_number",  "password", "schools", "other_names", "gender", "status")}),
+        (
+            None,
+            {
+                "fields": (
+                    "phone_number",
+                    "password",
+                    "other_names",
+                    "gender",
+                    "status",
+                )
+            },
+        ),
         ("Personal Info", {"fields": ("first_name", "last_name")}),
         (
             "Permissions",
@@ -82,5 +94,9 @@ class CustomUserAdmin(UserAdmin):
     ordering = ("email",)
 
 
-# Register the custom user model with the admin site
 admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(AdminProfile)
+admin.site.register(StudentProfile)
+admin.site.register(ParentProfile)
+admin.site.register(TeacherProfile)
+admin.site.register(StaffProfile)

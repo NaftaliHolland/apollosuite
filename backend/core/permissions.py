@@ -10,7 +10,7 @@ class IsMemberOfSchool(BasePermission):
         if not school_id or not request.user.is_authenticated:
             return False
 
-        return request.user.schools.filter(id=school_id).exists()
+        return request.user.belongs_to_school(school_id)
 
     #def has_object_permission(self, request, view, obj):
         #return True
