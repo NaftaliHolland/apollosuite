@@ -3,6 +3,7 @@ from core.serializers import CurrentSchoolDefault
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from utils.generate_admission_number import generate_admission_number
 from utils.generate_fake_phone import generate_fake_phone
 
 from .models import CustomUser, StudentProfile
@@ -30,26 +31,15 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 
-class StudentProfileSerializer(serializers.ModelSerializer):
+class StudentProfileCreateSerializer(serializers.ModelSerializer):
     """Serializer for StudentProfile model"""
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     school = serializers.HiddenField(default=CurrentSchoolDefault())
 
-    #user = UserSerializer()
-    #school_id = serializers.IntegerField(
-    #    write_only=True,
-    #    required=True,
-    #    help_text="School ID for generating admission number",
-    #)
-
-    #grade_name = serializers.CharField(source="grade.name", read_only=True)
-    #stream_name = serializers.CharField(source="stream.name", read_only=True)
-
     class Meta:
         model = StudentProfile
         fields = [
-            #"user",
             "first_name",
             "last_name",
             "school",
@@ -63,7 +53,6 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "enrollment_date",
             "created_at",
             "updated_at",
-            #"school_id",
         ]
         read_only_fields = [
             "id",
@@ -76,11 +65,9 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         """Create student profile with auto-generated admission number"""
 
         user_data = validated_data.pop("user")
-        #first_name = validated_data.pop("first_name")
-        #last_name = validated_data.pop("last_name")
 
         phone_number = generate_fake_phone()
-        # TODO: generate fake phone
+        # TODO: generate_admisison_number
 
         user = CustomUser.objects.create_user(
             **user_data,
@@ -107,6 +94,31 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+class StudentProfileSerializer(serializers.ModelSerializer):
+    """Serializer for StudentProfile model"""
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name')
+
+    # TODO: Handle nested objects
+
+    class Meta:
+        model = StudentProfile
+        fields = [
+            "first_name",
+            "last_name",
+            "school",
+            "grade",
+            "stream",
+            "enrollment_date",
+            "transfered_from",
+            "admission_number",
+            "assessment_number",
+            "enrollment_status",
+            "enrollment_date",
+            "created_at",
+            "updated_at",
+        ]
 
 class StudentProfileListSerializer(serializers.ModelSerializer):
     """Lighter serializer for list views"""

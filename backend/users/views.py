@@ -10,7 +10,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import CustomUser, StudentProfile
-from .serializers import (RegisterSerializer, StudentProfileListSerializer,
+from .serializers import (RegisterSerializer, StudentProfileCreateSerializer,
+                          StudentProfileListSerializer,
                           StudentProfileSerializer, UserSerializer)
 
 
@@ -83,8 +84,19 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
         .all()
     )
 
-    serializer_class = StudentProfileSerializer
+    #serializer_class = StudentProfileSerializer
     permission_classes = [IsAuthenticated, IsMemberOfSchool]
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return StudentProfileListSerializer
+        elif self.action == 'retrieve':
+            return StudentProfileSerializer
+        else:
+            return StudentProfileCreateSerializer
+
+        return StudentProfileSerializer
+
 
     def get_queryset(self):
         """

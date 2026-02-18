@@ -4,7 +4,7 @@ def generate_admission_number(self):
     # Use a transaction to avoid race conditions
     with transaction.atomic():
         max_adm = StudentProfile.objects.select_for_update().filter(
-            user__school=self.school
+            user__school=school
         ).aggregate(max_number=Max('admission_number'))['max_number']
         
         next_number = int(max_adm) + 1 if max_adm else 1
