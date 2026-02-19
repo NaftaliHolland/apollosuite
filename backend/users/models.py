@@ -1,7 +1,7 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from utils.generate_fake_phone import generate_fake_phone
 
 #from core.models import School
@@ -30,6 +30,14 @@ class CustomUserManager(BaseUserManager):
         user.save()
 
         return user
+
+
+    def get_or_create_user(self, phone_number, password=None, email=None, **extra_fields):
+        try:
+            new_user = self.create_user(phone_number, password, email, **extra_fields)
+            return new_user
+        except IntegrityError:
+            return self.get(phone_number=phone_number, email=email)
 
     def create_superuser(self, phone_number, password, email=None, **extra_fields):
 
@@ -159,11 +167,12 @@ class StudentProfile(models.Model):
 class ParentProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True, related_name='parentprofile')
     schools = models.ManyToManyField('core.School', related_name="parents", blank=True)
+    children = models.ManyToManyField(CustomUser, blank=True, related_name="parents")
 
     #TODO: Add other fields
 
     def __str__(self):
-        return f"ParentProfile({self.user.first_name - self.user.last_name})"
+        return f"ParentProfile({self.user.first_name} - {self.user.last_name})"
 
 class TeacherProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True, related_name='teacherprofile')

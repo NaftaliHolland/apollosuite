@@ -10,9 +10,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import CustomUser, StudentProfile
-from .serializers import (RegisterSerializer, StudentProfileCreateSerializer,
-                          StudentProfileListSerializer,
-                          StudentProfileSerializer, UserSerializer)
+from .serializers import (
+    RegisterSerializer,
+    StudentProfileCreateSerializer,
+    StudentProfileListSerializer,
+    StudentProfileSerializer,
+    UserSerializer,
+)
 
 
 class RegisterAPIView(generics.CreateAPIView):
@@ -79,24 +83,21 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
     partial_update: Partially update a student (PATCH)
     destroy: Delete a student
     """
-    queryset = (
-        StudentProfile.objects.select_related("school")
-        .all()
-    )
 
-    #serializer_class = StudentProfileSerializer
+    queryset = StudentProfile.objects.select_related("school").all()
+
+    # serializer_class = StudentProfileSerializer
     permission_classes = [IsAuthenticated, IsMemberOfSchool]
 
     def get_serializer_class(self):
-        if self.action == 'list':
+        if self.action == "list":
             return StudentProfileListSerializer
-        elif self.action == 'retrieve':
+        elif self.action == "retrieve":
             return StudentProfileSerializer
         else:
             return StudentProfileCreateSerializer
 
         return StudentProfileSerializer
-
 
     def get_queryset(self):
         """

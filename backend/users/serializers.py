@@ -6,7 +6,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from utils.generate_admission_number import generate_admission_number
 from utils.generate_fake_phone import generate_fake_phone
 
-from .models import CustomUser, StudentProfile
+from .models import CustomUser, ParentProfile, StudentProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -33,15 +33,24 @@ class UserSerializer(serializers.ModelSerializer):
 
 class StudentProfileCreateSerializer(serializers.ModelSerializer):
     """Serializer for StudentProfile model"""
-    first_name = serializers.CharField(source='user.first_name')
-    last_name = serializers.CharField(source='user.last_name')
+    first_name = serializers.CharField(write_only=True)
+    last_name = serializers.CharField(write_only=True)
+
     school = serializers.HiddenField(default=CurrentSchoolDefault())
+    parent_first_name = serializers.CharField(required=False, write_only=True)
+    parent_last_name = serializers.CharField(required=False, write_only=True)
+    parent_phone_number = serializers.CharField(required=False, write_only=True)
+    parent_email = serializers.CharField(required=False, write_only=True)
 
     class Meta:
         model = StudentProfile
         fields = [
             "first_name",
             "last_name",
+            "parent_first_name",
+            "parent_last_name",
+            "parent_phone_number",
+            "parent_email",
             "school",
             "grade",
             "stream",
@@ -64,18 +73,39 @@ class StudentProfileCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create student profile with auto-generated admission number"""
 
-        user_data = validated_data.pop("user")
+        school = validated_data.get("school")
+
+        user_data = {
+            "first_name": validated_data.pop("first_name"),
+            "last_name": validated_data.pop("last_name"),
+        }
+
+        parent_data = {
+            "first_name": validated_data.pop("parent_first_name"),
+            "last_name": validated_data.pop("parent_last_name"),
+            "phone_number": validated_data.pop("parent_phone_number"),
+            "email": validated_data.pop("parent_email"),
+        }
 
         phone_number = generate_fake_phone()
         # TODO: generate_admisison_number
 
-        user = CustomUser.objects.create_user(
+        student_user = CustomUser.objects.create_user(
             **user_data,
             phone_number=phone_number
         )
 
-        student_profile = StudentProfile(user=user, **validated_data)
+        student_profile = StudentProfile(user=student_user, **validated_data)
         student_profile.save()
+
+        parent_user = CustomUser.objects.get_or_create_user(
+            **parent_data
+        )
+
+        parent, _ = ParentProfile.objects.get_or_create(user=parent_user)
+        parent.schools.add(school)
+        parent.children.add(student_user)
+        parent.save()
 
         return student_profile
 
@@ -94,6 +124,19 @@ class StudentProfileCreateSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+class ParentProfileCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ParentProfile
+        fields = [
+
+        ]
+
+        read_only_fields = [
+        ]
+
+
 
 class StudentProfileSerializer(serializers.ModelSerializer):
     """Serializer for StudentProfile model"""
