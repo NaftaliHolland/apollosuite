@@ -1,5 +1,7 @@
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+from services.assign_admin_to_school import assign_admin_to_school
 
 from .models import AcademicYear, Grade, School, Stream, Term
 
@@ -28,11 +30,18 @@ class SchoolCreateSerializer(serializers.ModelSerializer):
             'created_at',
         ]
 
+    @transaction.atomic
     def create(self, validated_data):
-        validated_data["created_by"] = self.context["request"].user
+        user = self.context["request"].user
 
-        return super().create(validated_data)
+        validated_data["created_by"] = user
+        
+        school = super().create(validated_data)
 
+        assign_admin_to_school(user, school)
+        
+        return school
+        
 class SchoolSerializer(serializers.ModelSerializer):
     class Meta:
         model = School
