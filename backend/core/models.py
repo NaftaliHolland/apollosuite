@@ -17,21 +17,18 @@ class MapLocation(models.Model):
 
 class School(models.Model):
     name = models.CharField(max_length=255)
-    # I think this should be a DateField
     year_started = models.DateField(validators=[validate_school_start])
     about = models.TextField()
     website = models.URLField()
     address = models.TextField()
     map_location = models.ForeignKey(MapLocation, on_delete=models.CASCADE, related_name='schools', blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_schools")
     contact_email = models.EmailField()
     contact_phone = models.CharField(max_length=20)
     logo_url = models.CharField(max_length=500, blank=True, null=True)
     # TODO: add added_by field
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    # TODO: write a validator for year started, should not be any year after this year
-    # NOTE: will handle this on the frontend for now
 
     def __str__(self):
         return self.name

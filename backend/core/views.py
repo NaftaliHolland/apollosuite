@@ -5,11 +5,12 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from .models import AcademicYear, Grade, School, Stream, Term
 from .permissions import IsMemberOfSchool
 from .serializers import (AcademicYearSerializer, GradeSerializer,
-                          SchoolSerializer, StreamSerializer, TermSerializer)
+                          SchoolCreateSerializer, SchoolSerializer,
+                          StreamSerializer, TermSerializer)
 
 
 class SchoolViewSet(viewsets.ModelViewSet):
-    serializer_class = SchoolSerializer
+    #serializer_class = SchoolSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -23,6 +24,17 @@ class SchoolViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return [IsAdminUser()]
         return [IsAuthenticated()]
+
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            # TODO: Need to add a School list serializer
+            return SchoolSerializer
+        elif self.action == "retrieve":
+            return SchoolSerializer
+        else:
+            return SchoolCreateSerializer
+
 
 class GradeViewSet(viewsets.ModelViewSet):
 

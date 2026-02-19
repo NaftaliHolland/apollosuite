@@ -5,6 +5,34 @@ from .models import AcademicYear, Grade, School, Stream, Term
 
 # TODO: Check these nested relationships later not now I don't have time
 
+class SchoolCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = School
+        fields = [
+            'id',
+            'name',
+            'year_started',
+            'about',
+            'website',
+            'address',
+            'map_location',
+            'contact_email',
+            'contact_phone',
+            'logo_url',
+            'created_at',
+            'updated_at',
+        ]
+
+        read_only_fields = [
+            'id',
+            'created_at',
+        ]
+
+    def create(self, validated_data):
+        validated_data["created_by"] = self.context["request"].user
+
+        return super().create(validated_data)
+
 class SchoolSerializer(serializers.ModelSerializer):
     class Meta:
         model = School
@@ -16,6 +44,7 @@ class SchoolSerializer(serializers.ModelSerializer):
             'website',
             'address',
             'map_location',
+            'created_by',
             'contact_email',
             'contact_phone',
             'logo_url',
