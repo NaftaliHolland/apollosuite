@@ -20,7 +20,6 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "first_name",
             "last_name",
-            #"schools",
             "email",
             "phone_number",
             "status",
@@ -71,7 +70,6 @@ class StudentProfileCreateSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        """Create student profile with auto-generated admission number"""
 
         school = validated_data.get("school")
 
@@ -89,11 +87,14 @@ class StudentProfileCreateSerializer(serializers.ModelSerializer):
 
         phone_number = generate_fake_phone()
         # TODO: generate_admisison_number
+        admission_number = generate_admission_number(school)
 
         student_user = CustomUser.objects.create_user(
             **user_data,
-            phone_number=phone_number
+            phone_number=phone_number,
         )
+
+        validated_data["admission_number"] = admission_number
 
         student_profile = StudentProfile(user=student_user, **validated_data)
         student_profile.save()
