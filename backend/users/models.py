@@ -2,6 +2,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
+from django.db.models import Q
 from utils.generate_fake_phone import generate_fake_phone
 
 #from core.models import School
@@ -36,8 +37,11 @@ class CustomUserManager(BaseUserManager):
         try:
             new_user = self.create_user(phone_number, password, email, **extra_fields)
             return new_user
-        except IntegrityError:
-            return self.get(phone_number=phone_number, email=email)
+        except IntegrityError as e:
+            print ("This error", e)
+            return self.get(
+                Q(phone_number=phone_number) | Q(email=email)
+            )
 
     def create_superuser(self, phone_number, password, email=None, **extra_fields):
 
