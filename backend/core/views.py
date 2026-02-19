@@ -11,7 +11,6 @@ from .serializers import (AcademicYearSerializer, GradeSerializer,
 class SchoolViewSet(viewsets.ModelViewSet):
     serializer_class = SchoolSerializer
 
-
     def get_queryset(self):
         user = self.request.user
 

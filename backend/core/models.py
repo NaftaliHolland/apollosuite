@@ -1,31 +1,32 @@
-from datetime import date
-
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from utils.validators import validate_not_in_future
+from utils.validators import validate_school_start
 
 User = get_user_model()
 
 class MapLocation(models.Model):
+    name = models.CharField(max_length=100, null=True, blank=True)
     latitude = models.CharField(max_length=255)
     longitude = models.CharField(max_length=255)
 
     def __str__(self):
-        return f"{self.latitude} - {self.longitude}"
+        return f"{self.name}: {self.latitude} - {self.longitude}"
+
 
 class School(models.Model):
     name = models.CharField(max_length=255)
     # I think this should be a DateField
-    year_started = models.PositiveIntegerField(validators=[MinValueValidator(1800), validate_not_in_future])
+    year_started = models.DateField(validators=[validate_school_start])
     about = models.TextField()
     website = models.URLField()
     address = models.TextField()
-    map_location = models.ForeignKey(MapLocation, on_delete=models.CASCADE, related_name='schools')
+    map_location = models.ForeignKey(MapLocation, on_delete=models.CASCADE, related_name='schools', blank=True, null=True)
     contact_email = models.EmailField()
     contact_phone = models.CharField(max_length=20)
     logo_url = models.CharField(max_length=500, blank=True, null=True)
+    # TODO: add added_by field
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -200,5 +201,3 @@ class Term(models.Model):
 
     def __str__(self):
         return f"{self.academic_year.name} - {self.name}"
-
-
