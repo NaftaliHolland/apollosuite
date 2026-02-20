@@ -2,13 +2,15 @@
 
 from django.urls import include, path
 from rest_framework_nested import routers
-
 from users.views import StudentProfileViewSet
 
 from .views import (AcademicYearViewSet, GradeViewSet, SchoolViewSet,
                     StreamViewSet, TermViewSet)
 
 router = routers.SimpleRouter()
+
+router.register(r"students", StudentProfileViewSet, basename="student")
+
 router.register(r"schools", SchoolViewSet, basename="school")
 
 schools_router = routers.NestedSimpleRouter(router, r"schools", lookup="school")

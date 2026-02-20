@@ -7,6 +7,18 @@ from utils.generate_fake_phone import generate_fake_phone
 
 #from core.models import School
 
+
+
+class TenantManager(models.Manager):
+    """
+    Scopes queries to only a school
+
+    Should only be used on models with a one to many (foreign key relationship) with school - school field not many to many - schools
+    """
+
+    def for_school(self, school_id):
+        return self.get_queryset().filter(school_id=school_id)
+
 class CustomUserManager(BaseUserManager):
     """
     custom user manager for phone_number or email based authentication
@@ -164,6 +176,8 @@ class StudentProfile(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
 
     def __str__(self):
         return f"StudentProfile({self.user.first_name} - {self.user.last_name})"

@@ -1,4 +1,3 @@
-from core.permissions import IsMemberOfSchool
 from django.contrib.auth import authenticate
 from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -9,14 +8,12 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from core.permissions import IsMemberOfSchool
+
 from .models import CustomUser, StudentProfile
-from .serializers import (
-    RegisterSerializer,
-    StudentProfileCreateSerializer,
-    StudentProfileListSerializer,
-    StudentProfileSerializer,
-    UserSerializer,
-)
+from .serializers import (RegisterSerializer, StudentProfileCreateSerializer,
+                          StudentProfileListSerializer,
+                          StudentProfileSerializer, UserSerializer)
 
 
 class RegisterAPIView(generics.CreateAPIView):
@@ -71,23 +68,17 @@ class LoginAPIView(APIView):
             }
         )
 
-
 class StudentProfileViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing student profiles.
 
-    list: Get all students
-    retrieve: Get a specific student
-    create: Create a new student
-    update: Update a student (PUT)
-    partial_update: Partially update a student (PATCH)
-    destroy: Delete a student
-    """
+    def get_permissions(self):
+        permissions = [IsAuthenticated()]
 
-    queryset = StudentProfile.objects.select_related("school").all()
+        school_id = self.kwargs.get("school_pk") or self.kwargs.get("school_id")
 
-    # serializer_class = StudentProfileSerializer
-    permission_classes = [IsAuthenticated, IsMemberOfSchool]
+        if school_id:
+            permissions.append(IsMemberOfSchool())
+
+        return permissions
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -104,10 +95,11 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
         Optionally filter students by school.
         Use query parameter: ?school_id=1
         """
-        queryset = super().get_queryset()
-        school_id = self.request.query_params.get("school_id")
+        school_id = self.kwargs.get("school_pk") or self.kwargs.get("school_id")
 
-        if school_id:
-            queryset = queryset.filter(school_id=school_id)
+        user = self.request.user
 
-        return queryset.distinct()
+        if self.action == "retrieve" or user.is_staff:
+            return StudentProfile.objects.all()
+
+        return StudentProfile.objects.for_school(school_id)
