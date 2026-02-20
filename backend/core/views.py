@@ -47,7 +47,6 @@ class GradeViewSet(viewsets.ModelViewSet):
         school_id = self.kwargs["school_pk"]
         return Grade.objects.filter(
             school_id=school_id,
-            school__users=self.request.user,
         )
 
 class StreamViewSet(viewsets.ModelViewSet):

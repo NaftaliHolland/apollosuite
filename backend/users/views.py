@@ -1,3 +1,4 @@
+from core.permissions import IsMemberOfSchool
 from django.contrib.auth import authenticate
 from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -7,8 +8,6 @@ from rest_framework.viewsets import generics
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-
-from core.permissions import IsMemberOfSchool
 
 from .models import CustomUser, StudentProfile
 from .serializers import (RegisterSerializer, StudentProfileCreateSerializer,
@@ -68,6 +67,7 @@ class LoginAPIView(APIView):
             }
         )
 
+
 class StudentProfileViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
@@ -83,7 +83,7 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == "list":
             return StudentProfileListSerializer
-        elif self.action == "retrieve":
+        elif self.action in ["retrieve", "partial_update", "update"]:
             return StudentProfileSerializer
         else:
             return StudentProfileCreateSerializer
@@ -99,7 +99,7 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        if self.action == "retrieve" or user.is_staff:
+        if self.action in ["retrieve", "partial_update", "update"] or user.is_staff:
             return StudentProfile.objects.all()
 
         return StudentProfile.objects.for_school(school_id)
