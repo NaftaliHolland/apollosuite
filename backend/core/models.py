@@ -152,22 +152,20 @@ class AcademicYear(models.Model):
 class Term(models.Model):
     academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='terms')
     name = models.CharField(max_length=255)
-    sequence = models.PositiveSmallIntegerField()
+    order = models.PositiveSmallIntegerField()
     start_date = models.DateField()
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['sequence']
+        ordering = ['order']
         constraints = [
             models.UniqueConstraint(
                 fields=['academic_year', 'name'],
                 name='unique_term_name_per_year'
             )
         ]
-
-
 
     def clean(self): # Since I'm using DRF, I'll need to call full_clean somewhere
         academic_year = self.academic_year
