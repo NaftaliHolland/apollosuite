@@ -77,7 +77,7 @@ class StudentDiscount(models.Model):
     student = models.ForeignKey('users.StudentProfile', on_delete=models.PROTECT, related_name="discounts")
     discount = models.ForeignKey(Discount, on_delete=models.PROTECT, related_name='student_discounts')
     academic_year = models.ForeignKey(AcademicYear, on_delete=models.PROTECT, related_name='student_discounts')
-    assigned_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    assigned_by = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
     assigned_at = models.DateTimeField(auto_now_add=True)
     note = models.TextField(blank=True)
 
