@@ -99,7 +99,10 @@ def recalculate_student_discounts(student, academic_year):
     )
 
 
+    # Trying to build all this in one pass is not easy
+    # Now this is development, I like this, I am not an LLM
     # For first pass
+
     fee_item_specific_discounts = student_discounts.exclude(discount__fee_item__isnull=True).all()
 
     for student_discount in fee_item_specific_discounts:
