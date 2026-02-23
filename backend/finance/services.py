@@ -77,6 +77,8 @@ def assign_fees_to_student(student, academic_year):
 
         # TODO: apply discounts
 
+    recalculate_student_discounts(student, academic_year)
+
     return assignments
 
 
@@ -179,6 +181,17 @@ def recalculate_student_discounts(student, academic_year):
 
 
 def assign_grade_fee_item_to_students(grade_fee_item):
+    """
+    Triggered when a new GradeFeeItem is created
+    """
+
+    # TODO:
+    # - Get the grade
+    # - Find all students in that grade
+    # - For each student create a related StudentFeeAssignment for the new Item
+    # - Calls recalculate_student_discounts for each affected student
+    # - Not all students will be affected
+
     pass
 
 def record_payment(student, amount, payment_method, received_by, term, academic_year, allocations, reference, note):
