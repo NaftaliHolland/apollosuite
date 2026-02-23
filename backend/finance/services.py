@@ -1,4 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
+from django.db.models import Sum
 
 from finance.models import (Discount, FeeItem, GradeFeeItem, Payment,
                             PaymentItem, StudentDiscount, StudentFeeAssignment)
@@ -27,7 +29,6 @@ def assign_fees_to_student(student, academic_year):
     grade_fee_items = GradeFeeItem.objects.filter(grade=grade, academic_year=academic_year).all()
 
     assignments = []
-
 
     for grade_fee_item in grade_fee_items:
         if grade_fee_item.frequency == "per_term":
@@ -79,12 +80,18 @@ def assign_fees_to_student(student, academic_year):
     return assignments
 
 
+@transaction.atomic
 def recalculate_student_discounts(student, academic_year):
+
+    # TODO: Create submissions and bulk update once, remove all those unnecessary saves
+
+
     # TODO:
     # - Fetches all StudentDiscount for that student in that particular academic_year
     # - resets StudentFeeAssignment.discount to 0
     # - for student_discount in student_discounts:
     #   - if student_discount.discount.fee_item is not null then we apply that to that particular fee item in the StudentFeeAssignment 
+
     student_fee_assignments = StudentFeeAssignment.objects.filter(
         student=student,
         academic_year=academic_year,
@@ -98,10 +105,11 @@ def recalculate_student_discounts(student, academic_year):
         academic_year=academic_year,
     )
 
+    ## Trying to build all this in one pass is not easy
+    ## Now this is development, I like this, I am not an LLM
+    ## For first pass
 
-    # Trying to build all this in one pass is not easy
-    # Now this is development, I like this, I am not an LLM
-    # For first pass
+    # TODO: Optimize these queries dude
 
     fee_item_specific_discounts = student_discounts.exclude(discount__fee_item__isnull=True).all()
 
@@ -110,6 +118,11 @@ def recalculate_student_discounts(student, academic_year):
 
         # Get all matching assignments
         fee_item = discount.fee_item
+
+        # I already made a query to get all these when I was setting everything to 0
+        # Why am I doing this again?? Bad? maybe
+        # No that was different, I'm getting one for only that specific fee item, which I know I will get right now
+
         student_fee_item_assignment = StudentFeeAssignment.objects.get(
             student=student,
             grade_fee_item__fee_item=fee_item
@@ -120,62 +133,48 @@ def recalculate_student_discounts(student, academic_year):
 
         fee_assignment_gross = student_fee_item_assignment.gross_amount
 
-        discount = 0
+        discount_amount = 0
 
         if discount_value_type == "percentage":
-            # get the percentage of that particular fee item
-            discount = (discount_value / 100) * fee_assignment_gross
+            discount_amount = (discount_value / 100) * fee_assignment_gross
         elif discount_value_type == "fixed":
-            discount = fee_assignment_gross - discount_value
+            discount_amount = discount_value
 
-        student_fee_item_assignment.discount_amount += discount
+        student_fee_item_assignment.discount_amount += discount_amount
+        student_fee_item_assignment.net_amount -= discount_amount
 
         student_fee_item_assignment.save()
 
-    # For second pass
-    general_discounts = student_discounts.filter(discount__fee_item=None).all()
+    ## For second pass
+    general_discounts = student_discounts.filter(discount__fee_item=None)
 
+    student_fee_assignments = StudentFeeAssignment.objects.filter(
+        student=student,
+        academic_year=academic_year,
+    )
 
-    for student_discount in student_discounts:
+    for student_discount in general_discounts:
         discount = student_discount.discount
 
-        if student_discount.discount.fee_item:
-            # Get the StudentFeeAssignment related to that fee item
-            fee_item = discount.fee_item
-            student_fee_item_assignment = StudentFeeAssignment.objects.get(
-                student=student,
-                grade_fee_item__fee_item=fee_item
-            )
+        discount_value = discount.value
+        discount_value_type = discount.value_type
 
-            discount_value = discount.value
-            discount_value_type = discount.value_type
+        discount_amount = 0
 
-            fee_assignment_gross = student_fee_item_assignment.gross_amount
+        total_gross = student_fee_assignments.aggregate(Sum('gross_amount'))["gross_amount__sum"]
 
-            discount = 0
-
+        for student_fee_assignment in student_fee_assignments:
             if discount_value_type == "percentage":
-                # get the percentage of that particular fee item
-                discount = (discount_value / 100) * fee_assignment_gross
+                discount_amount = (discount_value / 100) * student_fee_assignment.gross_amount
+
             elif discount_value_type == "fixed":
-                discount = fee_assignment_gross - discount_value
+                discount_amount = (student_fee_assignment.gross_amount / total_gross) * discount_value
 
-            student_fee_item_assignment.discount_amount += discount
+            student_fee_assignment.discount_amount += discount_amount
+            student_fee_assignment.net_amount -= discount_amount
 
-            student_fee_item_assignment.save()
-
-        else:
-
-
-            # apply on total
-                # Just do the math
-
-            # Get gross
-            # Calculate discount
-            # Calculate net
-            
-            # I need to check if it is a percentage and calculate that
-            # If it is fixed and also calculate that
+            # TODO: I shouldn't be calling save here, check this
+            student_fee_assignment.save()
 
 
 
@@ -187,4 +186,3 @@ def record_payment(student, amount, payment_method, received_by, term, academic_
 
 def get_student_fee_summary(student, academic_year, term=None):
     pass
-
