@@ -7,6 +7,7 @@ from users.models import StudentProfile
 from finance.models import (Discount, FeeItem, GradeFeeItem, Payment,
                             PaymentItem, StudentDiscount, StudentFeeAssignment)
 from finance.services import (assign_fees_to_student,
+                              assign_grade_fee_item_to_students,
                               recalculate_student_discounts)
 
 User = get_user_model()
@@ -36,6 +37,7 @@ class AssignFeeToStudentTest(TestCase):
             end_date=timezone.datetime(current_year + 1, 1, 1).date(),
         )
         self.term1 = Term.objects.create(
+            school=self.school,
             academic_year=self.academic_year,
             name="Term 1",
             order=1,
@@ -43,6 +45,7 @@ class AssignFeeToStudentTest(TestCase):
             end_date=term_1_end_date,
         )
         self.term2 = Term.objects.create(
+            school=self.school,
             academic_year=self.academic_year,
             name="Term 2",
             order=2,
@@ -50,6 +53,7 @@ class AssignFeeToStudentTest(TestCase):
             end_date=term_2_end_date,
         )
         self.term3 = Term.objects.create(
+            school=self.school,
             academic_year=self.academic_year,
             name="Term 3",
             order=3,
@@ -57,6 +61,7 @@ class AssignFeeToStudentTest(TestCase):
             end_date=term_3_end_date,
         )
         self.grade1 = Grade.objects.create(school=self.school, name="Grade1")
+
         student_user = User.objects.create_user(
             first_name="John",
             last_name="Doe",
@@ -155,6 +160,7 @@ class RecalculateStudentDiscountTests(TestCase):
             end_date=timezone.datetime(current_year + 1, 1, 1).date(),
         )
         self.term1 = Term.objects.create(
+            school=self.school,
             academic_year=self.academic_year,
             name="Term 1",
             order=1,
@@ -162,6 +168,7 @@ class RecalculateStudentDiscountTests(TestCase):
             end_date=term_1_end_date,
         )
         self.term2 = Term.objects.create(
+            school=self.school,
             academic_year=self.academic_year,
             name="Term 2",
             order=2,
@@ -169,6 +176,7 @@ class RecalculateStudentDiscountTests(TestCase):
             end_date=term_2_end_date,
         )
         self.term3 = Term.objects.create(
+            school=self.school,
             academic_year=self.academic_year,
             name="Term 3",
             order=3,
@@ -668,3 +676,147 @@ class RecalculateStudentDiscountTests(TestCase):
 
         self.assertEqual(student_activity_fee_assignment.discount_amount, 20)
         self.assertEqual(student_activity_fee_assignment.net_amount, 180)
+
+class AssignGradeFeeItemToStudentsTest(TestCase):
+    def setUp(self):
+
+        current_year = timezone.now().year
+
+        term_1_start_date = timezone.datetime(current_year, 1, 1)
+        term_1_end_date = timezone.datetime(current_year, 4, 1)
+
+        term_2_start_date = timezone.datetime(current_year, 5, 1)
+        term_2_end_date = timezone.datetime(current_year, 7, 1)
+
+        term_3_start_date = timezone.datetime(current_year, 9, 1)
+        term_3_end_date = timezone.datetime(current_year, 11, 1)
+
+        self.school = School.objects.create(
+            name="Acme School",
+            year_started=timezone.datetime(current_year, 1, 1).date(),
+        )
+        self.academic_year = AcademicYear.objects.create(
+            school=self.school,
+            name="2026-2027",
+            start_date=timezone.datetime(current_year, 1, 1).date(),
+            end_date=timezone.datetime(current_year + 1, 1, 1).date(),
+        )
+        self.term1 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 1",
+            order=1,
+            start_date=term_1_start_date,
+            end_date=term_1_end_date,
+        )
+        self.term2 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 2",
+            order=2,
+            start_date=term_2_start_date,
+            end_date=term_2_end_date,
+        )
+        self.term3 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 3",
+            order=3,
+            start_date=term_3_start_date,
+            end_date=term_3_end_date,
+        )
+        self.grade1 = Grade.objects.create(school=self.school, name="Grade1")
+        student_user = User.objects.create_user(
+            first_name="John",
+            last_name="Doe",
+            phone_number="0711111111",
+            password="unsecurePass123",
+        )
+        self.student = StudentProfile.objects.create(
+            user=student_user,
+            school=self.school,
+            grade=self.grade1
+        )
+
+    def test_assigns_fee_item_to_all_students_in_linked_grade(self):
+        # create a new grade_fee_item and send it
+        # Create more students
+
+        student_user2 = User.objects.create_user(
+            first_name="Jane",
+            last_name="Doe",
+            phone_number="0722222342",
+            password="unsecurePass123",
+        )
+        student_2 = StudentProfile.objects.create(
+            user=student_user2,
+            school=self.school,
+            grade=self.grade1
+        )
+
+        student_user3 = User.objects.create_user(
+            first_name="James",
+            last_name="Doe",
+            phone_number="0722922342",
+            password="unsecurePass123",
+        )
+        student_3 = StudentProfile.objects.create(
+            user=student_user3,
+            school=self.school,
+            grade=self.grade1
+        )
+
+        tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
+
+        grade_fee_item = GradeFeeItem.objects.create(
+            fee_item=tuition_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=3500,
+            frequency="per_term",
+        )
+
+        self.assertEqual(
+            StudentFeeAssignment.objects.filter(
+                student=self.student,
+                grade_fee_item=grade_fee_item
+            ).count(),
+            0
+        )
+
+        self.assertEqual(
+            StudentFeeAssignment.objects.filter(
+                student=student_2,
+                grade_fee_item=grade_fee_item
+            ).count(),
+            0
+        )
+
+        self.assertEqual(
+            StudentFeeAssignment.objects.filter(
+                student=student_3,
+                grade_fee_item=grade_fee_item
+            ).count(),
+            0
+        )
+
+        assign_grade_fee_item_to_students(grade_fee_item)
+
+        student_1_assignments = StudentFeeAssignment.objects.filter(
+            student=self.student,
+            grade_fee_item=grade_fee_item
+        )
+
+        student_2_assignments = StudentFeeAssignment.objects.filter(
+            student=student_2,
+            grade_fee_item=grade_fee_item
+        )
+
+        student_3_assignments = StudentFeeAssignment.objects.filter(
+            student=student_3,
+            grade_fee_item=grade_fee_item
+        )
+
+        self.assertEqual(len(student_1_assignments), 3) # For the three terms
+        self.assertEqual(len(student_2_assignments), 3) # For the three terms
+        self.assertEqual(len(student_3_assignments), 3) # For the three terms
