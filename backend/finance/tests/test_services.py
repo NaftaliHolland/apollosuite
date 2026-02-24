@@ -841,3 +841,60 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
             ).count(),
             0
         )
+
+
+    def does_not_duplicate_assignments_when_called_more_than_once_with_the_same_grade_fee_item(self):
+        student_user = User.objects.create_user(
+            first_name="John",
+            last_name="Doe",
+            phone_number="0711111111",
+            password="unsecurePass123",
+        )
+        student = StudentProfile.objects.create(
+            user=student_user,
+            school=self.school,
+            grade=self.grade1
+        )
+
+        student_user2 = User.objects.create_user(
+            first_name="Jane",
+            last_name="Doe",
+            phone_number="0722222342",
+            password="unsecurePass123",
+        )
+        student_2 = StudentProfile.objects.create(
+            user=student_user2,
+            school=self.school,
+            grade=self.grade1
+        )
+
+        tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
+
+        grade_fee_item = GradeFeeItem.objects.create(
+            fee_item=tuition_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=3500,
+            frequency="per_term",
+        )
+
+        assign_grade_fee_item_to_students(grade_fee_item)
+
+        student_1_assignments = StudentFeeAssignment.objects.filter(
+            student=student,
+            grade_fee_item=grade_fee_item
+        )
+
+        student_2_assignments = StudentFeeAssignment.objects.filter(
+            student=student_2,
+            grade_fee_item=grade_fee_item
+        )
+
+        self.assertEqual(len(student_1_assignments), 3) # For the three terms
+        self.assertEqual(len(student_2_assignments), 3) # For the three terms
+
+        assign_grade_fee_item_to_students(grade_fee_item)
+
+        self.assertEqual(len(student_1_assignments), 3) # For the three terms
+        self.assertEqual(len(student_2_assignments), 3) # For the three terms
+
