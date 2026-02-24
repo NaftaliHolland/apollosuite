@@ -180,8 +180,6 @@ def recalculate_student_discounts(student, academic_year):
             # TODO: I shouldn't be calling save here, check this
             student_fee_assignment.save()
 
-
-
 @transaction.atomic
 def assign_grade_fee_item_to_students(grade_fee_item):
     """
@@ -197,13 +195,17 @@ def assign_grade_fee_item_to_students(grade_fee_item):
 
     # Get school
 
+    grade = grade_fee_item.grade
+    students = grade.students.all()
+
+    if not students:
+        return
+
     school = grade_fee_item.grade.school
     academic_year = grade_fee_item.academic_year
 
-    grade = grade_fee_item.grade
 
     # Only active students????
-    students = grade.students.all()
     student_fee_assignments = []
     fee_item_frequency = grade_fee_item.frequency
 

@@ -726,21 +726,20 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
             end_date=term_3_end_date,
         )
         self.grade1 = Grade.objects.create(school=self.school, name="Grade1")
+
+    def test_assigns_fee_item_to_all_students_in_linked_grade(self):
+
         student_user = User.objects.create_user(
             first_name="John",
             last_name="Doe",
             phone_number="0711111111",
             password="unsecurePass123",
         )
-        self.student = StudentProfile.objects.create(
+        student = StudentProfile.objects.create(
             user=student_user,
             school=self.school,
             grade=self.grade1
         )
-
-    def test_assigns_fee_item_to_all_students_in_linked_grade(self):
-        # create a new grade_fee_item and send it
-        # Create more students
 
         student_user2 = User.objects.create_user(
             first_name="Jane",
@@ -778,7 +777,7 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
 
         self.assertEqual(
             StudentFeeAssignment.objects.filter(
-                student=self.student,
+                student=student,
                 grade_fee_item=grade_fee_item
             ).count(),
             0
@@ -803,7 +802,7 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
         assign_grade_fee_item_to_students(grade_fee_item)
 
         student_1_assignments = StudentFeeAssignment.objects.filter(
-            student=self.student,
+            student=student,
             grade_fee_item=grade_fee_item
         )
 
@@ -820,3 +819,25 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
         self.assertEqual(len(student_1_assignments), 3) # For the three terms
         self.assertEqual(len(student_2_assignments), 3) # For the three terms
         self.assertEqual(len(student_3_assignments), 3) # For the three terms
+
+
+    def test_does_nothing_if_no_students_in_grade(self):
+        tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
+
+        grade_fee_item = GradeFeeItem.objects.create(
+            fee_item=tuition_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=3500,
+            frequency="per_term",
+        )
+
+        assign_grade_fee_item_to_students(grade_fee_item)
+
+
+        self.assertEqual(
+            StudentFeeAssignment.objects.filter(
+                grade_fee_item=grade_fee_item
+            ).count(),
+            0
+        )
