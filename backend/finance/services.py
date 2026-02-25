@@ -1,5 +1,5 @@
 from core.models import Term
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.db.models import Sum
 from users.models import StudentProfile
@@ -185,16 +185,6 @@ def assign_grade_fee_item_to_students(grade_fee_item):
     """
     Triggered when a new GradeFeeItem is created
     """
-
-    # TODO:
-    # - Get the grade
-    # - Find all students in that grade
-    # - For each student create a related StudentFeeAssignment for the new Item
-    # - Calls recalculate_student_discounts for each affected student
-    # - Not all students will be affected
-
-    # Get school
-
     grade = grade_fee_item.grade
     students = grade.students.all()
 
@@ -204,12 +194,9 @@ def assign_grade_fee_item_to_students(grade_fee_item):
     school = grade_fee_item.grade.school
     academic_year = grade_fee_item.academic_year
 
-
-    # Only active students????
+    #NOTE: Only active students????
     student_fee_assignments = []
     fee_item_frequency = grade_fee_item.frequency
-
-    # Get the first term for that school in that academic year
 
     all_terms = list(school.terms.filter(
         school=school,
@@ -259,8 +246,78 @@ def assign_grade_fee_item_to_students(grade_fee_item):
         recalculate_student_discounts(student, academic_year)
 
 
-def record_payment(student, amount, payment_method, received_by, term, academic_year, allocations, reference, note):
-    pass
+@transaction.atomic
+def record_payment(
+        student,
+        amount,
+        payment_method,
+        received_by,
+        term,
+        academic_year,
+        allocations, # list of dicts [{"fee_assignment_id": int, "amount": Decimal}]
+        reference,
+        note
+):
+
+
+    allocations_sum = sum(allocation["amount"] for allocation in allocations)
+
+    if allocations_sum != amount:
+        raise ValidationError("amount doesn't match allocations total")
+
+    # TODO: What do I need to do here??
+    # Check if the sum of all allocations equals the total amount
+    # Validates that each allocation does not exceed the current balance of that fee_assignment. Raise ValidationError
+    # Creates a Payment record
+    # For each allocation create a new PaymentItem, assign that Payment
+    # Return the created Payment
+
+
+    # TODO: get all fee assignments related toa that student in that particular term/year I don't even know at this point
+
+    fee_assignment_ids = [allocation["fee_assignment_id"] for allocation in allocations]
+
+    student_fee_assignments = StudentFeeAssignment.objects.filter(
+        id__in=fee_assignment_ids
+    )
+
+    payment_objects = []
+    payment_item_objects = []
+
+    for allocation in allocations:
+        # Create payment instances
+        payment = Payment(
+            payment_method=payment_method,
+            student=student,
+            amount=allocation["amount"],
+            reference=reference,
+            received_by=received_by,
+            term=term,
+            academic_year=academic_year,
+            note=note,
+        )
+        payment_objects.append(payment)
+
+        fee_assignment = StudentFeeAssignment.objects.get(pk=allocation["fee_assignment_id"])
+
+        payment_item = PaymentItem(
+            payment=payment,
+            fee_assignment=fee_assignment,
+            amount=allocation["amount"]
+        )
+        payment_item_objects.append(payment_item)
+
+
+
+    payments = Payment.objects.bulk_create(
+        payment_objects
+    )
+
+    PaymentItem.objects.bulk_create(
+        payment_item_objects
+    )
+
+    return payments
 
 def get_student_fee_summary(student, academic_year, term=None):
     pass

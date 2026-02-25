@@ -1,14 +1,15 @@
 from core.models import AcademicYear, Grade, School, Term
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
-from users.models import StudentProfile
+from users.models import AdminProfile, StudentProfile
 
 from finance.models import (Discount, FeeItem, GradeFeeItem, Payment,
                             PaymentItem, StudentDiscount, StudentFeeAssignment)
 from finance.services import (assign_fees_to_student,
                               assign_grade_fee_item_to_students,
-                              recalculate_student_discounts)
+                              recalculate_student_discounts, record_payment)
 
 User = get_user_model()
 
@@ -898,3 +899,419 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
         self.assertEqual(len(student_1_assignments), 3) # For the three terms
         self.assertEqual(len(student_2_assignments), 3) # For the three terms
 
+
+class RecordPaymentTests(TestCase):
+    def setUp(self):
+
+        current_year = timezone.now().year
+
+        term_1_start_date = timezone.datetime(current_year, 1, 1)
+        term_1_end_date = timezone.datetime(current_year, 4, 1)
+
+        term_2_start_date = timezone.datetime(current_year, 5, 1)
+        term_2_end_date = timezone.datetime(current_year, 7, 1)
+
+        term_3_start_date = timezone.datetime(current_year, 9, 1)
+        term_3_end_date = timezone.datetime(current_year, 11, 1)
+
+        self.school = School.objects.create(
+            name="Acme School",
+            year_started=timezone.datetime(current_year, 1, 1).date(),
+        )
+        self.academic_year = AcademicYear.objects.create(
+            school=self.school,
+            name="2026-2027",
+            start_date=timezone.datetime(current_year, 1, 1).date(),
+            end_date=timezone.datetime(current_year + 1, 1, 1).date(),
+        )
+        self.term1 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 1",
+            order=1,
+            start_date=term_1_start_date,
+            end_date=term_1_end_date,
+        )
+        self.term2 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 2",
+            order=2,
+            start_date=term_2_start_date,
+            end_date=term_2_end_date,
+        )
+        self.term3 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 3",
+            order=3,
+            start_date=term_3_start_date,
+            end_date=term_3_end_date,
+        )
+        self.grade1 = Grade.objects.create(school=self.school, name="Grade1")
+
+    def test_raises_error_when_allocation_sum_does_not_equal_amount(self):
+        admin_user = User.objects.create_user(
+            first_name="Admin",
+            last_name="Doe",
+            phone_number="0798282343",
+            password="unsecurePass123",
+        )
+
+        admin = AdminProfile.objects.create(
+            user=admin_user,
+        )
+
+        admin.schools.add(self.school)
+
+        student_user = User.objects.create_user(
+            first_name="John",
+            last_name="Doe",
+            phone_number="0711111111",
+            password="unsecurePass123",
+        )
+        student = StudentProfile.objects.create(
+            user=student_user,
+            school=self.school,
+            grade=self.grade1
+        )
+
+        allocations = [
+            {
+                "fee_assignment_id": 1,
+                "amount": 200,
+            },
+            {
+                "fee_assignment_id": 1,
+                "amount": 900,
+            },
+            {
+                "fee_assignment_id": 1,
+                "amount": 200,
+            },
+        ]
+
+
+        with self.assertRaises(ValidationError):
+            record_payment(
+                student=student,
+                amount=5000,
+                payment_method="M-pesa",
+                received_by=admin_user,
+                term=self.term1,
+                academic_year=self.academic_year,
+                allocations=allocations,
+                reference="KKLSKDJF",
+                note="Some random note"
+            )
+
+    def test_creates_one_payment_item_per_allocation(self):
+        admin_user = User.objects.create_user(
+            first_name="Admin",
+            last_name="Doe",
+            phone_number="0798282343",
+            password="unsecurePass123",
+        )
+
+        admin = AdminProfile.objects.create(
+            user=admin_user,
+        )
+
+        admin.schools.add(self.school)
+
+        student_user = User.objects.create_user(
+            first_name="John",
+            last_name="Doe",
+            phone_number="0711111111",
+            password="unsecurePass123",
+        )
+        student = StudentProfile.objects.create(
+            user=student_user,
+            school=self.school,
+            grade=self.grade1
+        )
+
+        tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
+
+        activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
+
+        tuition_grade_fee_item = GradeFeeItem.objects.create(
+            fee_item=tuition_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=400,
+            frequency="per_term",
+        )
+
+        activity_grade_fee_item = GradeFeeItem.objects.create(
+             fee_item=activity_fee_item,
+             grade=self.grade1,
+             academic_year=self.academic_year,
+             amount=200,
+             frequency="yearly",
+        )
+
+        student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
+            student=student,
+            grade_fee_item=tuition_grade_fee_item,
+            term=self.term1,
+            academic_year=self.academic_year,
+            gross_amount=tuition_grade_fee_item.amount,
+            discount_amount=0,
+            net_amount=tuition_grade_fee_item.amount,
+        )
+
+        student_activity_fee_assignment = StudentFeeAssignment.objects.create(
+            student=student,
+            grade_fee_item=activity_grade_fee_item,
+            term=self.term1,
+            academic_year=self.academic_year,
+            gross_amount=activity_grade_fee_item.amount,
+            discount_amount=0,
+            net_amount=activity_grade_fee_item.amount,
+        )
+
+
+        allocations = [
+            {
+                "fee_assignment_id": 1,
+                "amount": 200,
+            },
+            {
+                "fee_assignment_id": 2,
+                "amount": 900,
+            },
+        ]
+
+        payments = record_payment(
+            student=student,
+            amount=1100,
+            payment_method="M-pesa",
+            received_by=admin_user,
+            term=self.term1,
+            academic_year=self.academic_year,
+            allocations=allocations,
+            reference="KKLSKDJF",
+            note="Some random note"
+        )
+
+        self.assertEqual(
+            len(payments),
+            2
+        )
+
+    def test_associated_payment_items_created(self):
+        admin_user = User.objects.create_user(
+            first_name="Admin",
+            last_name="Doe",
+            phone_number="0798282343",
+            password="unsecurePass123",
+        )
+
+        admin = AdminProfile.objects.create(
+            user=admin_user,
+        )
+
+        admin.schools.add(self.school)
+
+        student_user = User.objects.create_user(
+            first_name="John",
+            last_name="Doe",
+            phone_number="0711111111",
+            password="unsecurePass123",
+        )
+        student = StudentProfile.objects.create(
+            user=student_user,
+            school=self.school,
+            grade=self.grade1
+        )
+
+        tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
+
+        activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
+
+        tuition_grade_fee_item = GradeFeeItem.objects.create(
+            fee_item=tuition_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=400,
+            frequency="per_term",
+        )
+
+        activity_grade_fee_item = GradeFeeItem.objects.create(
+             fee_item=activity_fee_item,
+             grade=self.grade1,
+             academic_year=self.academic_year,
+             amount=200,
+             frequency="yearly",
+        )
+
+        student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
+            student=student,
+            grade_fee_item=tuition_grade_fee_item,
+            term=self.term1,
+            academic_year=self.academic_year,
+            gross_amount=tuition_grade_fee_item.amount,
+            discount_amount=0,
+            net_amount=tuition_grade_fee_item.amount,
+        )
+
+        student_activity_fee_assignment = StudentFeeAssignment.objects.create(
+            student=student,
+            grade_fee_item=activity_grade_fee_item,
+            term=self.term1,
+            academic_year=self.academic_year,
+            gross_amount=activity_grade_fee_item.amount,
+            discount_amount=0,
+            net_amount=activity_grade_fee_item.amount,
+        )
+
+        allocations = [
+            {
+                "fee_assignment_id": 1,
+                "amount": 200,
+            },
+            {
+                "fee_assignment_id": 2,
+                "amount": 100,
+            },
+        ]
+
+        payments = record_payment(
+            student=student,
+            amount=300,
+            payment_method="M-pesa",
+            received_by=admin_user,
+            term=self.term1,
+            academic_year=self.academic_year,
+            allocations=allocations,
+            reference="KKLSKDJF",
+            note="Some random note"
+        )
+
+        self.assertEqual(
+            PaymentItem.objects.all().count(),
+            2
+        )
+
+    def test_payment_items_have_the_right_amount(self):
+        admin_user = User.objects.create_user(
+            first_name="Admin",
+            last_name="Doe",
+            phone_number="0798282343",
+            password="unsecurePass123",
+        )
+
+        admin = AdminProfile.objects.create(
+            user=admin_user,
+        )
+
+        admin.schools.add(self.school)
+
+        student_user = User.objects.create_user(
+            first_name="John",
+            last_name="Doe",
+            phone_number="0711111111",
+            password="unsecurePass123",
+        )
+        student = StudentProfile.objects.create(
+            user=student_user,
+            school=self.school,
+            grade=self.grade1
+        )
+
+        tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
+
+        activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
+
+        tuition_grade_fee_item = GradeFeeItem.objects.create(
+            fee_item=tuition_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=400,
+            frequency="per_term",
+        )
+
+        activity_grade_fee_item = GradeFeeItem.objects.create(
+             fee_item=activity_fee_item,
+             grade=self.grade1,
+             academic_year=self.academic_year,
+             amount=200,
+             frequency="yearly",
+        )
+
+        student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
+            student=student,
+            grade_fee_item=tuition_grade_fee_item,
+            term=self.term1,
+            academic_year=self.academic_year,
+            gross_amount=tuition_grade_fee_item.amount,
+            discount_amount=0,
+            net_amount=tuition_grade_fee_item.amount,
+        )
+
+        student_activity_fee_assignment = StudentFeeAssignment.objects.create(
+            student=student,
+            grade_fee_item=activity_grade_fee_item,
+            term=self.term1,
+            academic_year=self.academic_year,
+            gross_amount=activity_grade_fee_item.amount,
+            discount_amount=0,
+            net_amount=activity_grade_fee_item.amount,
+        )
+
+        allocations = [
+            {
+                "fee_assignment_id": 1,
+                "amount": 300,
+            },
+            {
+                "fee_assignment_id": 2,
+                "amount": 100,
+            },
+        ]
+
+        payments = record_payment(
+            student=student,
+            amount=400,
+            payment_method="M-pesa",
+            received_by=admin_user,
+            term=self.term1,
+            academic_year=self.academic_year,
+            allocations=allocations,
+            reference="KKLSKDJF",
+            note="Some random note"
+        )
+
+
+        # Get all payment items
+        #payment_items = PaymentItem.objects.filter(payment_id__in=[payment.id for payment in payments])
+
+        first_payment_item = PaymentItem.objects.get(pk=1)
+        second_payment_item = PaymentItem.objects.get(pk=2)
+
+        self.assertEqual(first_payment_item.amount, 300)
+        self.assertEqual(second_payment_item.amount, 100)
+
+
+    def test_raises_error_when_allocation_amount_is_zero_or_negative(self):
+        pass
+
+    def test_raises_error_when_single_allocation_exceeds_outstanding_balance(self):
+        pass
+
+
+    def test_payment_items_have_correct_allocated_amounts(self):
+        pass
+
+    def test_returns_payment_with_prefetched_items(self):
+        pass
+
+    def test_each_allocation_does_not_exceed_current_balance(self):
+        pass
+
+    def test_all_student_fee_assignments_are_updated_with_correct_values(self):
+        pass
+
+    def test_payment_instances_are_created_with_right_values(self):
+        pass

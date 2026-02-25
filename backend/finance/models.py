@@ -115,7 +115,6 @@ class StudentFeeAssignment(models.Model):
     def amount_paid(self):
         return sum(item.amount for item in self.payment_items.all())
 
-
     @property
     def balance(self):
         return self.net_amount - self.amount_paid
@@ -140,7 +139,7 @@ class Payment(models.Model):
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
     reference = models.CharField(max_length=255, blank=True)
     received_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='payments_received')
-    received_at = models.DateTimeField()
+    received_at = models.DateTimeField(auto_now_add=True)
     term = models.ForeignKey(Term, on_delete=models.PROTECT, related_name="payments")
     academic_year = models.ForeignKey(AcademicYear, on_delete=models.PROTECT, related_name="payments")
     note = models.TextField(blank=True)
