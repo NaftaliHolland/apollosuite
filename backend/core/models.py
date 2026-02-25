@@ -150,6 +150,7 @@ class AcademicYear(models.Model):
 
 
 class Term(models.Model):
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='terms')
     academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='terms')
     name = models.CharField(max_length=255)
     order = models.PositiveSmallIntegerField()
@@ -162,7 +163,7 @@ class Term(models.Model):
         ordering = ['order']
         constraints = [
             models.UniqueConstraint(
-                fields=['academic_year', 'name'],
+                fields=['school', 'academic_year', 'name'],
                 name='unique_term_name_per_year'
             )
         ]

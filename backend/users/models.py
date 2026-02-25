@@ -164,7 +164,7 @@ class StudentProfile(models.Model):
 
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True, related_name='studentprofile')
     school = models.ForeignKey("core.School", related_name="students", on_delete=models.CASCADE)
-    grade = models.ForeignKey('core.Grade', on_delete=models.CASCADE, related_name='student_profile', null=True, blank=True)
+    grade = models.ForeignKey('core.Grade', on_delete=models.CASCADE, related_name='students', null=True, blank=True)
     stream = models.ForeignKey('core.Stream', on_delete=models.CASCADE, related_name='stream', null=True, blank=True)
     enrollment_date = models.DateField(auto_now_add=True)
     enrollment_status = models.CharField(max_length=20, choices=ENROLMENT_STATUS_CHOICES, default="applied")
