@@ -286,6 +286,10 @@ def record_payment(
 
     for allocation in allocations:
         # Create payment instances
+        fee_assignment = StudentFeeAssignment.objects.get(pk=allocation["fee_assignment_id"])
+        
+        # Get balance
+
         payment = Payment(
             payment_method=payment_method,
             student=student,
@@ -298,7 +302,6 @@ def record_payment(
         )
         payment_objects.append(payment)
 
-        fee_assignment = StudentFeeAssignment.objects.get(pk=allocation["fee_assignment_id"])
 
         payment_item = PaymentItem(
             payment=payment,
@@ -306,8 +309,6 @@ def record_payment(
             amount=allocation["amount"]
         )
         payment_item_objects.append(payment_item)
-
-
 
     payments = Payment.objects.bulk_create(
         payment_objects
