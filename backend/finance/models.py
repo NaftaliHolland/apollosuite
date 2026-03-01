@@ -2,6 +2,7 @@ from core.models import AcademicYear, Grade, School, Term
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
+from users.models import TenantManager
 
 User = get_user_model()
 
@@ -10,6 +11,8 @@ class FeeItem(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+
+    objects = TenantManager()
 
     def __str__(self):
         return self.name
@@ -52,6 +55,7 @@ class Discount(models.Model):
         ('fixed', 'Fixed')
     ]
 
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="discounts")
     name = models.CharField(max_length=255)
     discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES)
     value_type = models.CharField(max_length=20, choices=VALUE_TYPE_CHOICES)
@@ -65,6 +69,9 @@ class Discount(models.Model):
         related_name='discounts',
     )
     is_active = models.BooleanField(default=True)
+
+    objects = TenantManager()
+    
 
     def clean(self):
         if self.value_type == 'percentage' and self.value > 100:
@@ -80,6 +87,8 @@ class StudentDiscount(models.Model):
     assigned_by = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
     assigned_at = models.DateTimeField(auto_now_add=True)
     note = models.TextField(blank=True)
+
+    objects = TenantManager()
 
     class Meta:
         constraints = [

@@ -4,6 +4,9 @@ from django.urls import include, path
 from rest_framework_nested import routers
 from users.views import StudentProfileViewSet
 
+from finance.views import (DiscountViewSet, FeeItemViewSet,
+                           GradeFeeItemViewSet, StudentDiscountViewSet)
+
 from .views import (AcademicYearViewSet, GradeViewSet, SchoolViewSet,
                     StreamViewSet, TermViewSet)
 
@@ -20,6 +23,17 @@ schools_router.register(
     r"academic-years", AcademicYearViewSet, basename="academic-year"
 )
 schools_router.register(r"students", StudentProfileViewSet, basename="student")
+
+schools_router.register(
+    r"finance/fee-items", FeeItemViewSet, basename="school-fee-item"
+)
+schools_router.register(
+    r"finance/grade-fee-items", GradeFeeItemViewSet, basename="grade-fee-item"
+)
+schools_router.register(r"finance/discounts", DiscountViewSet, basename="discount")
+schools_router.register(
+    r"finance/student-discounts", StudentDiscountViewSet, basename="student-discount"
+)
 
 schools_router.register(r"terms", TermViewSet, basename="term")
 academic_years_router = routers.NestedSimpleRouter(

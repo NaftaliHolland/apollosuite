@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 from utils.validators import validate_school_start
 
 User = get_user_model()
@@ -32,6 +33,14 @@ class School(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def current_academic_year(self):
+        today = timezone.now().date()
+        return self.academic_years.filter(
+            start_date__lte=today,
+            end_date__gte=today
+        ).first()
 
 class Stream(models.Model):
     name = models.CharField(max_length=100)

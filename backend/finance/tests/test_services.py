@@ -3,13 +3,12 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
-from users.models import AdminProfile, StudentProfile
-
 from finance.models import (Discount, FeeItem, GradeFeeItem, Payment,
                             PaymentItem, StudentDiscount, StudentFeeAssignment)
 from finance.services import (assign_fees_to_student,
                               assign_grade_fee_item_to_students,
                               recalculate_student_discounts, record_payment)
+from users.models import AdminProfile, StudentProfile
 
 User = get_user_model()
 
@@ -302,6 +301,7 @@ class RecalculateStudentDiscountTests(TestCase):
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
 
         tuition_percentage_discount = Discount.objects.create(
+            school=self.school,
             name="10% discount on tuition",
             discount_type="general",
             value_type="percentage",
@@ -345,6 +345,7 @@ class RecalculateStudentDiscountTests(TestCase):
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
 
         tuition_fixed_discount = Discount.objects.create(
+            school=self.school,
             name="200 discount on tuition",
             discount_type="general",
             value_type="fixed",
@@ -389,6 +390,7 @@ class RecalculateStudentDiscountTests(TestCase):
         activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
 
         tuition_fixed_discount = Discount.objects.create(
+            school=self.school,
             name="500 discount on tuition",
             discount_type="general",
             value_type="fixed",
@@ -397,6 +399,7 @@ class RecalculateStudentDiscountTests(TestCase):
         )
 
         activity_fixed_discount = Discount.objects.create(
+            school=self.school,
             name="100 discount on activity",
             discount_type="general",
             value_type="fixed",
@@ -471,6 +474,7 @@ class RecalculateStudentDiscountTests(TestCase):
         activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
 
         tuition_percentage_discount = Discount.objects.create(
+            school=self.school,
             name="10% discount on tuition",
             discount_type="general",
             value_type="percentage",
@@ -479,6 +483,7 @@ class RecalculateStudentDiscountTests(TestCase):
         )
 
         activity_percentage_discount = Discount.objects.create(
+            school=self.school,
             name="5% discount on activity",
             discount_type="general",
             value_type="percentage",
@@ -554,6 +559,7 @@ class RecalculateStudentDiscountTests(TestCase):
         activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
 
         fixed_discount_on_gross = Discount.objects.create(
+            school=self.school,
             name="100 discount on total",
             discount_type="general",
             value_type="fixed",
@@ -619,6 +625,7 @@ class RecalculateStudentDiscountTests(TestCase):
         activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
 
         percentage_discount_on_gross = Discount.objects.create(
+            school=self.school,
             name="10% discount on total",
             discount_type="general",
             value_type="percentage",

@@ -191,60 +191,63 @@ def assign_grade_fee_item_to_students(grade_fee_item):
     if not students:
         return
 
+
     school = grade_fee_item.grade.school
     academic_year = grade_fee_item.academic_year
 
-    #NOTE: Only active students????
-    student_fee_assignments = []
-    fee_item_frequency = grade_fee_item.frequency
-
-    all_terms = list(school.terms.filter(
-        school=school,
-        academic_year=academic_year
-    ))
-
-    term_one = all_terms[0]
-
-    fee_assignment_term = (
-        None if fee_item_frequency == "one_time"
-        else term_one if fee_item_frequency == ["yearly"]
-        else all_terms
-    )
-
     for student in students:
-        if not isinstance(fee_assignment_term, list):
-            student_fee_assignment = StudentFeeAssignment(
-                student=student,
-                grade_fee_item=grade_fee_item,
-                term = fee_assignment_term,
-                academic_year=academic_year,
-                gross_amount=grade_fee_item.amount,
-                net_amount=grade_fee_item.amount
-            )
-            student_fee_assignments.append(student_fee_assignment)
+        assign_fees_to_student(student, academic_year)
 
-        else:
-            for term in fee_assignment_term:
-                student_fee_assignment = StudentFeeAssignment(
-                    student=student,
-                    grade_fee_item=grade_fee_item,
-                    term = term,
-                    academic_year=academic_year,
-                    gross_amount=grade_fee_item.amount,
-                    net_amount=grade_fee_item.amount
-                )
+    ##NOTE: Only active students????
+    #student_fee_assignments = []
+    #fee_item_frequency = grade_fee_item.frequency
 
-                student_fee_assignments.append(student_fee_assignment)
+    #all_terms = list(school.terms.filter(
+    #    school=school,
+    #    academic_year=academic_year
+    #))
 
-    StudentFeeAssignment.objects.bulk_create(
-        student_fee_assignments
-    )
+    #term_one = all_terms[0]
 
-    # TODO: Not good, there has to be a better way to handle this
+    #fee_assignment_term = (
+    #    None if fee_item_frequency == "one_time"
+    #    else term_one if fee_item_frequency == ["yearly"]
+    #    else all_terms
+    #)
 
-    for student in students:
-        recalculate_student_discounts(student, academic_year)
+    #for student in students:
+    #    if not isinstance(fee_assignment_term, list):
+    #        student_fee_assignment = StudentFeeAssignment(
+    #            student=student,
+    #            grade_fee_item=grade_fee_item,
+    #            term = fee_assignment_term,
+    #            academic_year=academic_year,
+    #            gross_amount=grade_fee_item.amount,
+    #            net_amount=grade_fee_item.amount
+    #        )
+    #        student_fee_assignments.append(student_fee_assignment)
 
+    #    else:
+    #        for term in fee_assignment_term:
+    #            student_fee_assignment = StudentFeeAssignment(
+    #                student=student,
+    #                grade_fee_item=grade_fee_item,
+    #                term = term,
+    #                academic_year=academic_year,
+    #                gross_amount=grade_fee_item.amount,
+    #                net_amount=grade_fee_item.amount
+    #            )
+
+    #            student_fee_assignments.append(student_fee_assignment)
+
+    #StudentFeeAssignment.objects.bulk_create(
+    #    student_fee_assignments
+    #)
+
+    ## TODO: Not good, there has to be a better way to handle this
+
+    #for student in students:
+    #    recalculate_student_discounts(student, academic_year)
 
 @transaction.atomic
 def record_payment(

@@ -1,6 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+
 from services.assign_admin_to_school import assign_admin_to_school
 
 from .models import AcademicYear, Grade, School, Stream, Term
@@ -197,15 +198,17 @@ class CurrentAcademicYearDefault:
         return academic_year
 
 class TermSerializer(serializers.ModelSerializer):
+    school = serializers.HiddenField(default=CurrentSchoolDefault())
     academic_year = serializers.HiddenField(default=CurrentAcademicYearDefault())
 
     class Meta:
         model = Term
         fields = [
             'id',
+            'school',
             'academic_year',
             'name',
-            'sequence',
+            'order',
             'start_date',
             'end_date',
             'created_at',

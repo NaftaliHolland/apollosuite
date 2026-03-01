@@ -9,6 +9,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from finance.services import assign_fees_to_student
+
 from .models import CustomUser, StudentProfile
 from .serializers import (RegisterSerializer, StudentProfileCreateSerializer,
                           StudentProfileListSerializer,
@@ -103,3 +105,11 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
             return StudentProfile.objects.all()
 
         return StudentProfile.objects.for_school(school_id)
+
+    def perform_update(self, serializer):
+        student = serializer.save()
+        data = self.request.data
+        academic_year = student.school.current_academic_year
+
+        if data.get('grade'):
+            assign_fees_to_student(student, academic_year)

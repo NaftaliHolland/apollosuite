@@ -23,7 +23,9 @@ class SchoolViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'list':
             return [IsAdminUser()]
-        return [IsAuthenticated()]
+        elif self.action == 'create':
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsMemberOfSchool()]
 
 
     def get_serializer_class(self):
