@@ -143,6 +143,7 @@ class Payment(models.Model):
         ('cheque', 'Cheque'),
     ]
 
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="payments")
     student = models.ForeignKey('users.StudentProfile', on_delete=models.PROTECT, related_name="payments")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
@@ -153,6 +154,8 @@ class Payment(models.Model):
     academic_year = models.ForeignKey(AcademicYear, on_delete=models.PROTECT, related_name="payments")
     note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = TenantManager()
 
     @property
     def amount_allocated(self):
@@ -167,10 +170,12 @@ class Payment(models.Model):
 
 
 class PaymentItem(models.Model):
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="payment_items")
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="items")
     fee_assignment = models.ForeignKey(StudentFeeAssignment, on_delete=models.PROTECT, related_name="payment_items")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 
+    objects = TenantManager()
 
     def clean(self):
         if self.amount > self.fee_assignment.balance:

@@ -72,7 +72,6 @@ class CurrentSchoolDefault:
 
     def __call__(self, serializer_field):
         view = serializer_field.context['view']
-        # I need to check if school doesn't exisit
         school = School.objects.get(pk=view.kwargs['school_pk'])
         return school
 

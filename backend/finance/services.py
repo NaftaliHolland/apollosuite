@@ -263,6 +263,8 @@ def record_payment(
 ):
 
 
+    school = student.school
+
     allocations_sum = sum(allocation["amount"] for allocation in allocations)
 
     if allocations_sum != amount:
@@ -294,6 +296,7 @@ def record_payment(
         # Get balance
 
         payment = Payment(
+            school=school,
             payment_method=payment_method,
             student=student,
             amount=allocation["amount"],
@@ -307,6 +310,7 @@ def record_payment(
 
 
         payment_item = PaymentItem(
+            school=school,
             payment=payment,
             fee_assignment=fee_assignment,
             amount=allocation["amount"]

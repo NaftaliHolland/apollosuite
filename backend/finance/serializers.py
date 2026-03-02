@@ -1,5 +1,7 @@
+from core.models import AcademicYear, Term
 from core.serializers import CurrentSchoolDefault
 from rest_framework import serializers
+from users.models import StudentProfile
 
 from .models import (Discount, FeeItem, GradeFeeItem, Payment, PaymentItem,
                      StudentDiscount, StudentFeeAssignment)
@@ -102,7 +104,59 @@ class StudentDiscountCreateSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class PaymentSerializer(serializers.ModelSerializer):
-    pass
+    class Meta:
+        model = Payment
+        fields = [
+            'school',
+            'id',
+            'student',
+            'amount',
+            'payment_method',
+            'reference',
+            'received_by',
+            'received_at',
+            'term',
+            'academic_year',
+            'note',
+            'created_at',
+        ]
+
+class PaymentItemInputSerializer(serializers.Serializer):
+    fee_assignment_id = serializers.IntegerField()
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=1, max_value=10000000)
+
+
+class PaymentCreateSerializer(serializers.Serializer):
+    student = serializers.PrimaryKeyRelatedField(queryset=StudentProfile.objects.all())
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = serializers.ChoiceField(choices=Payment.PAYMENT_METHOD_CHOICES)
+    school = serializers.CharField(default=CurrentSchoolDefault())
+    term = serializers.PrimaryKeyRelatedField(queryset=Term.objects.all())
+    #academic_year = serializers.PrimaryKeyRelatedField(queryset=AcademicYear.objects.all())
+    reference = serializers.CharField(required=False, allow_blank=True, default='')
+    note = serializers.CharField(required=False, allow_blank=True, default='')
+    allocations = PaymentItemInputSerializer(many=True)
+
+
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Payment amount must be greate than 0.")
+
+        return value
+    
+    def validate_allocations(self, value):
+        if not value:
+            raise serializers.ValidationError("At least one validation is required")
+
+        return value
+
+    # TODO: Implement this
+    #def validate(self, data):
+    #    pass
+
 
 class PaymentItemSerializser(serializers.ModelSerializer):
+    pass
+
+class FeeSummarySerializer(serializers.ModelSerializer):
     pass

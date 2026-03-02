@@ -5,7 +5,8 @@ from rest_framework_nested import routers
 from users.views import StudentProfileViewSet
 
 from finance.views import (DiscountViewSet, FeeItemViewSet,
-                           GradeFeeItemViewSet, StudentDiscountViewSet)
+                           GradeFeeItemViewSet, PaymentViewSet,
+                           StudentDiscountViewSet)
 
 from .views import (AcademicYearViewSet, GradeViewSet, SchoolViewSet,
                     StreamViewSet, TermViewSet)
@@ -33,6 +34,11 @@ schools_router.register(
 schools_router.register(r"finance/discounts", DiscountViewSet, basename="discount")
 schools_router.register(
     r"finance/student-discounts", StudentDiscountViewSet, basename="student-discount"
+)
+schools_router.register(
+    r"finance/payments",
+    PaymentViewSet,
+    basename="payment"
 )
 
 schools_router.register(r"terms", TermViewSet, basename="term")

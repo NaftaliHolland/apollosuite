@@ -1,16 +1,19 @@
 from core.permissions import IsMemberOfSchool
 from django.shortcuts import render
+from rest_framework import status
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from finance.services import (assign_grade_fee_item_to_students,
-                              recalculate_student_discounts)
+                              recalculate_student_discounts, record_payment)
 
-from .models import Discount, FeeItem, GradeFeeItem, StudentDiscount
+from .models import (Discount, FeeItem, GradeFeeItem, Payment, PaymentItem,
+                     StudentDiscount)
 from .serializers import (DiscountCreateSerializer, DiscountSerializer,
                           FeeItemCreateSerializer, FeeItemSerializer,
-                          GradeFeeItemSerializer,
-                          StudentDiscountCreateSerializer,
+                          GradeFeeItemSerializer, PaymentCreateSerializer,
+                          PaymentSerializer, StudentDiscountCreateSerializer,
                           StudentDiscountSerializer)
 
 # I think I'll have everything accessed from the school url
@@ -48,6 +51,7 @@ class GradeFeeItemViewSet(ModelViewSet):
         grade_fee_item = serializer.save()
 
         assign_grade_fee_item_to_students(grade_fee_item)
+
 
 class DiscountViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsMemberOfSchool]
@@ -92,3 +96,53 @@ class StudentDiscountViewSet(ModelViewSet):
         academic_year = student_discount.academic_year
 
         recalculate_student_discounts(student=student, academic_year=academic_year)
+
+
+class PaymentViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated, IsMemberOfSchool]
+
+    def get_queryset(self):
+        school_id = self.kwargs["school_pk"]
+
+        return Payment.objects.for_school(school_id=school_id).all()
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return PaymentCreateSerializer
+        return PaymentSerializer 
+
+    def update(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Payment cannot be modified"},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Payments cannot be deleted"},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+    def create(self, request, *args, **kwargs):
+        input_serializer = self.get_serializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        data = input_serializer.validated_data
+
+        school = data["school"]
+
+        payments = record_payment(
+            student=data["student"],
+            amount=data["amount"],
+            payment_method=data["payment_method"],
+            received_by=request.user,
+            term=data["term"],
+            academic_year=school.current_academic_year,
+            allocations=data["allocations"],
+            reference=data["reference"],
+            note=data["note"]
+        )
+
+        return Response(
+            PaymentSerializer(payments, many=True).data,
+            status=status.HTTP_201_CREATED
+        )
