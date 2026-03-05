@@ -39,12 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				await queryClient.fetchQuery({
 					queryKey: ["currentUser"],
 					queryFn: async () => {
-						const res = await api.get("auth/me");
-
+						const res = await api.get("auth/me/");
 						return res.data.user;
-					}
+					},
 				});
-			} catch {
+			} catch (error) {
+				console.log("Error", error);
 				clearTokens();
 				queryClient.clear();
 			} finally {
@@ -67,6 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		await queryClient.invalidateQueries({
 			queryKey: ["currentUser"],
 		});
+
+		return response.data
 	}
 
 	function logout() {

@@ -34,6 +34,8 @@ type Tokens = {
 }
 
 export const setTokens = ({ access, refresh }: Tokens) => {
+	if (typeof window === 'undefined') return;
+
 	localStorage.setItem('accessToken', access)
 	localStorage.setItem('refreshToken', refresh)
 }
@@ -45,6 +47,20 @@ const axiosInstance: AxiosInstance = axios.create({
 		'Content-Type': 'application/json'
 	}
 })
+
+axiosInstance.interceptors.request.use(
+	(config: InternalAxiosRequestConfig) => {
+		const token = getAccessToken();
+		if (token) config.headers.Authorization = `Bearer ${token}`;
+
+		return config;
+	},
+
+	(error: AxiosError) => {
+		console.error('Request interceptor error:', error);
+		return Promise.reject(error);
+	}
+);
 
 axiosInstance.interceptors.response.use(
 	(response: AxiosResponse) => response,
@@ -59,7 +75,7 @@ axiosInstance.interceptors.response.use(
 
 			if (refreshToken) {
 				try {
-					const response = await axios.post(`${BASE_URL}/auth/refresh/`, {
+					const response = await axios.post(`${BASE_URL}auth/refresh/`, {
 						"refresh": refreshToken,
 					});
 

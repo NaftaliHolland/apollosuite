@@ -27,10 +27,6 @@ function Example({
 	containerClassName?: string
 }) {
 
-	const { login } = useAuth();
-
-	login("0711111111", "naph10503");
-
 	return (
 		<div
 			data-slot="example"
