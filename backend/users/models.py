@@ -8,6 +8,12 @@ from utils.generate_fake_phone import generate_fake_phone
 #from core.models import School
 
 
+PROFILE_ROLES = [
+    ("studentprofile", "student"),
+    ("teacherprofile", "teacher"),
+    ("adminprofile", "admin"),
+    ("staffprofile", "staff"),
+]
 
 class TenantManager(models.Manager):
     """
@@ -68,7 +74,9 @@ class CustomUserManager(BaseUserManager):
          
         return self.create_user(phone_number, password, email, **extra_fields)
 
+
 class CustomUser(AbstractUser):
+
     USER_STATUS_CHOICES = [
         ('active', 'Active'),
         ('inactive', 'Inactive'),
@@ -86,6 +94,7 @@ class CustomUser(AbstractUser):
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES)
     phone_number = models.CharField(max_length=20, unique=True)
     status = models.CharField(max_length=50, choices=USER_STATUS_CHOICES, default='active')
+    active_role = models.CharField(max_length=20, choices=PROFILE_ROLES, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -97,39 +106,14 @@ class CustomUser(AbstractUser):
     objects = CustomUserManager()
 
     @property
-    def is_student(self):
-        return hasattr(self, "studentprofile")
-
-    @property
-    def is_teacher(self):
-        return hasattr(self, "teacherprofile")
-
-    @property
-    def is_parent(self):
-        return hasattr(self, "parentprofile")
-
-    @property
-    def is_school_staff(self):
-        return hasattr(self, "staffprofile")
-
-    @property
-    def is_admin(self):
-        return hasattr(self, "adminprofile")
-
-    @property
     def roles(self):
         current_roles = []
 
-        if self.is_student:
-            current_roles.append("student")
-        if self.is_parent:
-            current_roles.append("parent")
-        if self.is_teacher:
-            current_roles.append("teacher")
-        if self.is_school_staff:
-            current_roles.append("school_staff")
-        if self.is_admin:
-            current_roles.append("admin")
+        for profile, role in PROFILE_ROLES:
+            if hasattr(self, profile):
+                current_roles.append(role)
+
+        return current_roles
 
     def belongs_to_school(self, school_id):
         if hasattr(self, "studentprofile"):

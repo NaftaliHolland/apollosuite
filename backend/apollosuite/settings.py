@@ -34,11 +34,15 @@ ALLOWED_HOSTS = [
 
 CORS_ALLOWED_ORIGINS = [
     'https://naph.softspin.co.ke',
-    'sylvester-petalodic-streamingly.ngrok-free.dev'
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://sylvester-petalodic-streamingly.ngrok-free.dev'
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://naph.softspin.co.ke',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
     'https://sylvester-petalodic-streamingly.ngrok-free.dev'
 ]
 
@@ -46,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
+    'corsheaders',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
@@ -59,6 +64,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',

@@ -11,9 +11,6 @@ from .models import CustomUser, ParentProfile, StudentProfile
 
 class UserSerializer(serializers.ModelSerializer):
 
-    # TODO: Add nested serializer for role
-    # TODO: Add nested serializer for schools
-
     class Meta:
         model = CustomUser
         fields = [
@@ -23,6 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "phone_number",
             "status",
+            "roles",
             "created_at",
         ]
 

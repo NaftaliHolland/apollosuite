@@ -1,6 +1,8 @@
 from core.permissions import IsMemberOfSchool
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
+from finance.services import assign_fees_to_student
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,16 +11,15 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from finance.services import assign_fees_to_student
-
-from .models import CustomUser, StudentProfile
+from .models import PROFILE_ROLES, StudentProfile
 from .serializers import (RegisterSerializer, StudentProfileCreateSerializer,
                           StudentProfileListSerializer,
                           StudentProfileSerializer, UserSerializer)
 
+User = get_user_model()
 
 class RegisterAPIView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()
+    queryset = User.objects.all()
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
 
@@ -42,6 +43,53 @@ class RegisterAPIView(generics.CreateAPIView):
             status=status.HTTP_201_CREATED,
         )
 
+class ProfileAPIView(APIView):
+    permissions = [IsAuthenticated]
+
+    def get(self, request):
+        user = self.request.user
+
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        user = request.user
+
+        role = request.data.get("role")
+
+        if not role:
+            return Response(
+                {"details": "Missing role"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        roles_dict = {k: v for v, k in PROFILE_ROLES}
+
+        valid_roles = user.roles
+
+        if role not in valid_roles:
+            return Response(
+                {"details": "User does not have this role" },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.active_role = roles_dict[role]
+
+        user.save(update_fields=["active_role"])
+
+        return Response(
+            {"active_role": role}
+        )
+
+class UserViewSet(viewsets.ModelViewSet):
+
+
+    @action(detail=False, methods=["get"], url_path="me")
+    def me(self, request):
+        user = request.user
+        serializer = self.get_serializer(user)
+
+        return Response(serializer.data)
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -61,14 +109,11 @@ class LoginAPIView(APIView):
 
         return Response(
             {
-                "user": UserSerializer(user).data,
-                "tokens": {
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                },
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "roles": user.roles,
             }
         )
-
 
 class StudentProfileViewSet(viewsets.ModelViewSet):
 

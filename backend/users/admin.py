@@ -43,6 +43,7 @@ class CustomUserAdmin(UserAdmin):
                 "fields": (
                     "phone_number",
                     "password",
+                    "active_role",
                     "other_names",
                     "gender",
                     "status",
