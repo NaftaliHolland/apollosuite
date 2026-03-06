@@ -13,6 +13,7 @@ PROFILE_ROLES = [
     ("teacherprofile", "teacher"),
     ("adminprofile", "admin"),
     ("staffprofile", "staff"),
+    ("parentprofile", "parent"),
 ]
 
 class TenantManager(models.Manager):

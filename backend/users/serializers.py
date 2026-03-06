@@ -6,10 +6,12 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from utils.generate_admission_number import generate_admission_number
 from utils.generate_fake_phone import generate_fake_phone
 
-from .models import CustomUser, ParentProfile, StudentProfile
+from .models import PROFILE_ROLES, CustomUser, ParentProfile, StudentProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
+
+    active_role = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
@@ -20,6 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "phone_number",
             "status",
+            "active_role",
             "roles",
             "created_at",
         ]
@@ -27,6 +30,11 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ["user_id", "created_at"]
 
 
+    def get_active_role(self, obj):
+        roles_dict = {k: v for k, v in PROFILE_ROLES}
+        active_role = obj.active_role
+
+        return roles_dict[active_role]
 
 class StudentProfileCreateSerializer(serializers.ModelSerializer):
     """Serializer for StudentProfile model"""

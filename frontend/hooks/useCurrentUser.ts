@@ -6,10 +6,10 @@ export function useCurrentUser() {
 	const token = getAccessToken();
 
 	return useQuery({
-		queryKey: ["currentUser"],
+		queryKey: ["currentUser", token],
 		queryFn: async () => {
-			const res = await api.get("/auth/me/");
-			return res.data;
+			const response = await api.get("/auth/me/");
+			return response.data;
 		},
 		enabled: !!token,
 	});

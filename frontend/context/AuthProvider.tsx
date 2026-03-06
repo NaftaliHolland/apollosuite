@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					queryKey: ["currentUser"],
 					queryFn: async () => {
 						const res = await api.get("auth/me/");
-						return res.data.user;
+						return res.data;
 					},
 				});
 			} catch (error) {
