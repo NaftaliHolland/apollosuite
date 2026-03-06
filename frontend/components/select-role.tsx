@@ -25,7 +25,6 @@ export default function SelectRole() {
 
 	const router = useRouter();
 
-
 	const selectRoleMutation = useMutation(
 		{
 			mutationFn: (role: string) => api.patch(
@@ -53,7 +52,12 @@ export default function SelectRole() {
 			</p>
 
 			<div className="w-full mt-4">
-				<ul className="flex flex-col gap-1">
+				{isLoading &&
+					<div className="flex justify-center w-full">
+						<LoaderCircle className="animate-spin text-primary" />
+					</div>
+				}
+				<ul className="flex flex-col gap-1 w-full">
 					{data?.roles?.map((role: string) => {
 						const active = selected === role;
 						return (
