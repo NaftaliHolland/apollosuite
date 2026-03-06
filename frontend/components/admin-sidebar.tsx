@@ -15,6 +15,8 @@ import {
 	CollapsibleTrigger,
 	CollapsibleContent,
 } from "@/components/ui/collapsible";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 //import {
 //	IconCamera,
 //	IconChartBar,
@@ -62,12 +64,12 @@ const data = {
 	navMain: [
 		{
 			title: "Dashboard",
-			url: "#",
+			url: "/dashboard",
 			icon: Home,
 		},
 		{
 			title: "Students",
-			url: "#",
+			url: "/students",
 			icon: Users,
 		},
 		{
@@ -175,6 +177,7 @@ const data = {
 	//	],
 }
 
+
 export function NavMain({
 	items,
 }: {
@@ -182,12 +185,16 @@ export function NavMain({
 		title: string
 		url: string
 		icon?: LucideIcon
+		isActive?: boolean
 		items?: {
 			title: string
 			url: string
 		}[]
 	}[]
 }) {
+
+	const pathname = usePathname();
+
 	return (
 		<SidebarGroup>
 			<SidebarGroupContent className="flex flex-col gap-2">
@@ -204,7 +211,7 @@ export function NavMain({
 									? (
 										<>
 											<CollapsibleTrigger asChild>
-												<SidebarMenuButton tooltip={item.title}>
+												<SidebarMenuButton tooltip={item.title} isActive={pathname.includes(item.url)}>
 													{item.icon && <item.icon />}
 													<span>{item.title}</span>
 													<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -215,9 +222,9 @@ export function NavMain({
 													{item.items?.map((subItem) => (
 														<SidebarMenuSubItem key={subItem.title}>
 															<SidebarMenuSubButton asChild>
-																<a href={subItem.url}>
+																<Link href={subItem.url}>
 																	<span>{subItem.title}</span>
-																</a>
+																</Link>
 															</SidebarMenuSubButton>
 														</SidebarMenuSubItem>
 													))}
@@ -227,9 +234,15 @@ export function NavMain({
 										</>
 									)
 									: (
-										<SidebarMenuButton tooltip={item.title}>
-											{item.icon && <item.icon />}
-											<span>{item.title}</span>
+										<SidebarMenuButton
+											tooltip={item.title}
+											isActive={pathname.includes(item.url)}
+											asChild
+										>
+											<Link href={item.url}>
+												{item.icon && <item.icon />}
+												<span>{item.title}</span>
+											</Link>
 										</SidebarMenuButton>
 									)
 								}
