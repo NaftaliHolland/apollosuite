@@ -7,6 +7,7 @@ export type User = {
 	status: string;
 	active_role: string;
 	roles: string[];
+	schools?: {school_id: string, school_name: string}[];
 }
 
 export type Student = {

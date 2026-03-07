@@ -11,16 +11,7 @@ import { toast } from "sonner";
 
 export default function SelectRole() {
 
-	// TODO: Do I really need to fetch this again here, am I even fetching it again??
-	//
-	const { data, isLoading } = useQuery({
-		queryKey: ["currentUser"],
-		queryFn: async () => {
-			const response = await api.get("/auth/me/");
-			return response.data;
-		},
-
-	});
+	const { data: user, isLoading } = useCurrentUser();
 	const [selected, setSelected] = useState<string | null>(null);
 
 	const router = useRouter();
@@ -31,8 +22,18 @@ export default function SelectRole() {
 				"/auth/me/",
 				{ "role": role }
 			),
-			onSuccess: () =>
-				router.replace("/dashboard"),
+			onSuccess: () => {
+				const schools = user?.schools;
+
+				if (schools && schools?.length > 1) {
+					router.push("/select-school")
+				} else {
+					if (schools) {
+						localStorage.setItem("active_school", JSON.stringify(schools[0]))
+					}
+					router.replace("/dashboard")
+				}
+			},
 			onError: (error) => {
 				toast.error(error.message)
 			}
@@ -58,7 +59,7 @@ export default function SelectRole() {
 					</div>
 				}
 				<ul className="flex flex-col gap-1 w-full">
-					{data?.roles?.map((role: string) => {
+					{user?.roles?.map((role: string) => {
 						const active = selected === role;
 						return (
 							<li key={role}>

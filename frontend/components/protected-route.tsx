@@ -8,12 +8,12 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
-	const { data: user, isLoading } = useCurrentUser();
+	const { data: user, isLoading, isPending } = useCurrentUser();
 
 	const router = useRouter();
 
 	useEffect(() => {
-		if (!user && !isLoading) {
+		if (!user && !isLoading && !isPending) {
 			router.replace("/login");
 		}
 	}, [user, isLoading]);

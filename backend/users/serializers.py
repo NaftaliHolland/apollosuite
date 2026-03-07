@@ -37,15 +37,15 @@ class UserSerializer(serializers.ModelSerializer):
         return roles_dict[active_role]
 
     def get_schools(self, obj):
-    # TODO: get all schools
         if hasattr(obj, "adminprofile"):
-            return [school.id for school in obj.adminprofile.schools.all()]
+            return [{"school_id": school.id, "school_name": school.name} for school in obj.adminprofile.schools.all()]
         elif hasattr(obj, "parentprofile"):
-            return [school.id for school in obj.parentprofile.schools.all()]
+            return [{"school_id": school.id, "school_name": school.name} for school in obj.parentprofile.schools.all()]
         elif hasattr(obj, "studentprofile"):
-            return [obj.studentprofile.school.id]
+            school = obj.studentprofile.school
+            return [{"school_id": school.id, "school_name": school.name}]
         elif hasattr(obj, "staffprofile"):
-            return [school.id for school in obj.staffprofile.schools.all()]
+            return [{"school_id": school.id, "school_name": school.name} for school in obj.staffprofile.schools.all()]
 
 class StudentProfileCreateSerializer(serializers.ModelSerializer):
     """Serializer for StudentProfile model"""
