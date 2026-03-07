@@ -21,5 +21,6 @@ export function useCurrentUser() {
 			return response.data;
 		},
 		enabled: !!token,
+		refetchOnWindowFocus: false,
 	});
 }
