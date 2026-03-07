@@ -1,18 +1,15 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 import { Student } from "@/types";
 import api from "@/lib/api";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable } from "@/components/data-table";
+import { Button } from "@/components/ui/button"
+import Link from "next/link";
 
-// TODO: Define columns here
-//
-//
-//TODO: We only need to pass columns and data, we already have the data
-//
-//
 
 const columns: ColumnDef<Student>[] = [
 	{
@@ -95,7 +92,21 @@ export function StudentsTable() {
 		<div>
 			{isLoading && <p>Loading ...</p>}
 			{error && <p>Error{error.message}</p>}
-			{students && <DataTable columns={columns} data={students} />}
+			{students && (
+				<div className="flex flex-col gap-4 w-full">
+					<div className="flex justify-between w-full">
+						<p>Students</p>
+						<Button asChild>
+							<Link href="/students/new">
+								<Plus />
+								<p>Add Student</p>
+							</Link>
+						</Button>
+					</div>
+
+					<DataTable columns={columns} data={students} />
+				</div>
+			)}
 		</div>
 
 	);
