@@ -6,7 +6,6 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { Sidebar } from "@/components/ui/sidebar";
-import { SiteHeader } from "@/components/site-header";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
 
@@ -44,7 +43,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 				<SidebarComponent variant="inset" />
 
 				<SidebarInset>
-					<SiteHeader />
 					{children}
 				</SidebarInset>
 			</SidebarProvider>

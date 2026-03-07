@@ -12,6 +12,7 @@ from .models import PROFILE_ROLES, CustomUser, ParentProfile, StudentProfile
 class UserSerializer(serializers.ModelSerializer):
 
     active_role = serializers.SerializerMethodField()
+    schools = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
@@ -24,16 +25,27 @@ class UserSerializer(serializers.ModelSerializer):
             "status",
             "active_role",
             "roles",
+            "schools",
         ]
 
         read_only_fields = ["user_id", "created_at"]
-
 
     def get_active_role(self, obj):
         roles_dict = {k: v for k, v in PROFILE_ROLES}
         active_role = obj.active_role
 
         return roles_dict[active_role]
+
+    def get_schools(self, obj):
+    # TODO: get all schools
+        if hasattr(obj, "adminprofile"):
+            return [school.id for school in obj.adminprofile.schools.all()]
+        elif hasattr(obj, "parentprofile"):
+            return [school.id for school in obj.parentprofile.schools.all()]
+        elif hasattr(obj, "studentprofile"):
+            return [obj.studentprofile.school.id]
+        elif hasattr(obj, "staffprofile"):
+            return [school.id for school in obj.staffprofile.schools.all()]
 
 class StudentProfileCreateSerializer(serializers.ModelSerializer):
     """Serializer for StudentProfile model"""
@@ -172,22 +184,21 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 class StudentProfileListSerializer(serializers.ModelSerializer):
     """Lighter serializer for list views"""
 
+    #use_id = serializers.PrimaryKeyRelatedField()
     student_name = serializers.SerializerMethodField()
-    grade_name = serializers.CharField(source="grade.name", read_only=True)
-    stream_name = serializers.CharField(source="stream.name", read_only=True)
+    grade_name = serializers.CharField(source="grade.name", read_only=True, default="")
+    stream_name = serializers.CharField(source="stream.name", read_only=True, default="")
 
     class Meta:
         model = StudentProfile
         fields = [
-            "user",
+            "user_id",
             "student_name",
             "admission_number",
-            "grade",
+            "assessment_number",
             "grade_name",
-            "stream",
             "stream_name",
             "enrollment_status",
-            "enrollment_date",
         ]
 
     def get_student_name(self, obj):
