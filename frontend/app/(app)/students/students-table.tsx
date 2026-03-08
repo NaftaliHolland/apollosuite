@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { Student } from "@/types";
+import { Student, LocalStorageSchool } from "@/types";
 import api from "@/lib/api";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -78,7 +78,7 @@ export function StudentsTable() {
 
 	const currentSchool = localStorage.getItem("active_school");
 
-	const school: { school_id: string, school_name: string } = JSON.parse(currentSchool ? currentSchool : "");
+	const school: LocalStorageSchool = JSON.parse(currentSchool ? currentSchool : "");
 
 	const { data: students, isLoading, error } = useQuery({
 		queryKey: ["students"],

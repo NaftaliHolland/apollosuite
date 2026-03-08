@@ -8,11 +8,12 @@ import { useState, useEffect } from "react";
 
 export function useCurrentUser() {
 
-	const [token, setToken] = useState<string | null>(null);
+	//const [token, setToken] = useState<string | null>(null);
+	const token = getAccessToken();
 
-	useEffect(() => {
-		setToken(getAccessToken());
-	}, [])
+	//useEffect(() => {
+	//	setToken(getAccessToken());
+	//}, [])
 
 	return useQuery({
 		queryKey: ["currentUser", token],

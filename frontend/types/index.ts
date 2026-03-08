@@ -1,3 +1,8 @@
+export type LocalStorageSchool = {
+	school_id: string;
+	school_name: string;
+}
+
 export type User = {
 	id: string | number;
 	first_name: string;
@@ -7,18 +12,19 @@ export type User = {
 	status: string;
 	active_role: string;
 	roles: string[];
-	schools?: {school_id: string, school_name: string}[];
+	schools?: LocalStorageSchool[];
 }
 
 export type Student = {
-	user_id: string,
-	student_name: string,
-	admission_number: string,
-	assessment_number?: string,
-	grade_name?: string,
-	stream_name?: string,
-	enrollment_status: string,
+	user_id: string;
+	student_name: string;
+	admission_number: string;
+	assessment_number?: string;
+	grade_name?: string;
+	stream_name?: string;
+	enrollment_status: string;
 }
 
 export type StudentDetail = {
 }
+
