@@ -4,9 +4,9 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from .models import AcademicYear, Grade, School, Stream, Term
 from .permissions import IsMemberOfSchool
-from .serializers import (AcademicYearSerializer, GradeSerializer,
-                          SchoolCreateSerializer, SchoolSerializer,
-                          StreamSerializer, TermSerializer)
+from .serializers import (AcademicYearSerializer, GradeListSerializer,
+                          GradeSerializer, SchoolCreateSerializer,
+                          SchoolSerializer, StreamSerializer, TermSerializer)
 
 
 class SchoolViewSet(viewsets.ModelViewSet):
@@ -51,6 +51,12 @@ class GradeViewSet(viewsets.ModelViewSet):
             school_id=school_id,
         )
 
+    def get_serializer_class(self):
+        if self.action == "list":
+            return GradeListSerializer
+
+        return super().get_serializer_class()
+
 class StreamViewSet(viewsets.ModelViewSet):
     serializer_class = StreamSerializer
     permission_classes = [IsAuthenticated, IsMemberOfSchool]
@@ -83,3 +89,4 @@ class TermViewSet(viewsets.ModelViewSet):
             academic_year__school_id=school_id,
             academic_year__school__users=self.request.user,
         )
+

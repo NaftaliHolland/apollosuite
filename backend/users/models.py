@@ -2,7 +2,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
-from django.db.models import Q
+from django.db.models import Q, UniqueConstraint
 from utils.generate_fake_phone import generate_fake_phone
 
 #from core.models import School
@@ -52,6 +52,7 @@ class CustomUserManager(BaseUserManager):
         return user
 
 
+
     def get_or_create_user(self, phone_number, password=None, email=None, **extra_fields):
         try:
             new_user = self.create_user(phone_number, password, email, **extra_fields)
@@ -90,7 +91,7 @@ class CustomUser(AbstractUser):
     ]
 
     username = None
-    email = models.EmailField(unique=True, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
     other_names = models.CharField(max_length=255, null=True, blank=True)
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES)
     phone_number = models.CharField(max_length=20, unique=True)
@@ -105,6 +106,22 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
     objects = CustomUserManager()
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=['phone_number', 'email'],
+                condition=Q(email__isnull=False),
+                name="unique_phone_and_email_when_email_not_null",
+            ),
+
+            UniqueConstraint(
+                fields=['phone_number'],
+                condition=Q(email__isnull=True),
+                name="unique_phone_when_email_null",
+            ),
+
+        ]
 
     @property
     def roles(self):

@@ -114,6 +114,28 @@ class GradeSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         return  value.replace(' ', '').lower()
 
+class StreamListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Stream
+        fields = [
+            'id',
+            'name',
+        ]
+
+class GradeListSerializer(serializers.ModelSerializer):
+    streams = StreamListSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Grade
+        fields = [
+            'id',
+            'name',
+            'school',
+            'description',
+            'streams',
+        ]
+
+
 class StreamSerializer(serializers.ModelSerializer):
     school = serializers.HiddenField(default=CurrentSchoolDefault())
 

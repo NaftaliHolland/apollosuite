@@ -42,6 +42,7 @@ class CustomUserAdmin(UserAdmin):
             {
                 "fields": (
                     "phone_number",
+                    "email",
                     "password",
                     "active_role",
                     "other_names",
@@ -92,7 +93,7 @@ class CustomUserAdmin(UserAdmin):
     search_fields = ("email", "phone_number", "first_name", "last_name")
 
     # Default ordering in the list view
-    ordering = ("email",)
+    ordering = ("phone_number",)
 
 
 admin.site.register(CustomUser, CustomUserAdmin)

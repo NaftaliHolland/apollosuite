@@ -28,3 +28,18 @@ export type Student = {
 export type StudentDetail = {
 }
 
+
+export type Stream = {
+	id: number;
+	name: string;
+}
+
+export type Grade = {
+	id: number;
+	name: string;
+	description?: string;
+	streams: Stream[];
+}
+
+export type GradeDetail = {
+}

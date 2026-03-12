@@ -1,10 +1,11 @@
-from core.models import School
-from core.serializers import CurrentSchoolDefault
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from utils.generate_admission_number import generate_admission_number
 from utils.generate_fake_phone import generate_fake_phone
+
+from core.models import School
+from core.serializers import CurrentSchoolDefault
 
 from .models import PROFILE_ROLES, CustomUser, ParentProfile, StudentProfile
 
@@ -51,6 +52,7 @@ class StudentProfileCreateSerializer(serializers.ModelSerializer):
     """Serializer for StudentProfile model"""
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
+    gender = serializers.CharField(write_only=True)
 
     school = serializers.HiddenField(default=CurrentSchoolDefault())
     parent_first_name = serializers.CharField(required=False, write_only=True)
@@ -63,6 +65,7 @@ class StudentProfileCreateSerializer(serializers.ModelSerializer):
         fields = [
             "first_name",
             "last_name",
+            "gender",
             "parent_first_name",
             "parent_last_name",
             "parent_phone_number",
@@ -93,6 +96,7 @@ class StudentProfileCreateSerializer(serializers.ModelSerializer):
         user_data = {
             "first_name": validated_data.pop("first_name"),
             "last_name": validated_data.pop("last_name"),
+            "gender": validated_data.pop("gender")
         }
 
         parent_data = {
@@ -160,6 +164,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     """Serializer for StudentProfile model"""
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
+    gender = serializers.CharField(source='user.gender')
 
     # TODO: Handle nested objects
 
@@ -168,6 +173,8 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         fields = [
             "first_name",
             "last_name",
+            "gender",
+            "grade",
             "school",
             "grade",
             "stream",
@@ -186,6 +193,7 @@ class StudentProfileListSerializer(serializers.ModelSerializer):
 
     #use_id = serializers.PrimaryKeyRelatedField()
     student_name = serializers.SerializerMethodField()
+    gender = serializers.CharField(source="user.gender")
     grade_name = serializers.CharField(source="grade.name", read_only=True, default="")
     stream_name = serializers.CharField(source="stream.name", read_only=True, default="")
 
@@ -194,6 +202,7 @@ class StudentProfileListSerializer(serializers.ModelSerializer):
         fields = [
             "user_id",
             "student_name",
+            "gender",
             "admission_number",
             "assessment_number",
             "grade_name",

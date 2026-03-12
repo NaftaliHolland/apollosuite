@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectLabel, SelectValue, SelectGroup } from "@/components/ui/select";
 import api from "@/lib/api";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { LocalStorageSchool } from "@/types";
+import { LocalStorageSchool, Grade } from "@/types";
 
 // TODO: Write validation for phone number
 //
@@ -66,6 +66,8 @@ export default function NewStudent() {
 			parent_first_name: "",
 			parent_last_name: "",
 			parent_phone_number: "",
+			grade: "",
+			stream: "",
 		}
 	})
 
@@ -109,8 +111,13 @@ export function BasicInformation({ form }: { form: UseFormReturn<any> }) {
 
 	const gradesQuery = useQuery({
 		queryKey: ["grades"],
-		queryFn: () => api.get(`schools/${school?.school_id}/grades/`)
+		queryFn: async (): Promise<Grade[]> => {
+			const response = await api.get(`schools/${school?.school_id}/grades/`)
+			return response.data
+		}
 	});
+
+	const selectedGrade = form.watch("grade");
 
 	return (
 		<form>
@@ -183,14 +190,16 @@ export function BasicInformation({ form }: { form: UseFormReturn<any> }) {
 															<LoaderCircle className="animate-spin" />
 														</div>
 													)
-													: <SelectValue placeholder="Select a fruit" />
+													: <SelectValue placeholder="Select grade" />
 												}
 											</SelectTrigger>
 											<SelectContent>
 												<SelectGroup>
-													<SelectItem value="apple">Apple</SelectItem>
-													<SelectItem value="banana">Banana</SelectItem>
-													<SelectItem value="blueberry">Blueberry</SelectItem>
+													{gradesQuery.data &&
+														gradesQuery.data.map((grade, index) =>
+															<SelectItem key={index} value={grade.id.toString()}>{grade.name}</SelectItem>
+														)
+													}
 												</SelectGroup>
 											</SelectContent>
 										</Select>
@@ -200,38 +209,44 @@ export function BasicInformation({ form }: { form: UseFormReturn<any> }) {
 									</Field>
 								)}
 							/>
-							<Controller
-								name="stream"
-								control={form.control}
-								render={({ field, fieldState }) => (
-									<Field data-invalid={fieldState.invalid}>
-										<FieldLabel htmlFor="stream">Stream</FieldLabel>
-										<Select
-											name={field.name}
-											value={field.value}
-											onValueChange={field.onChange}
-										>
-											<SelectTrigger
-												id="stream"
-												aria-invalid={fieldState.invalid}
-
+							{(gradesQuery.data
+								?.find((grade) => grade.id.toString() === selectedGrade)
+								?.streams?.length ?? 0) > 0 &&
+								<Controller
+									name="stream"
+									control={form.control}
+									render={({ field, fieldState }) => (
+										<Field data-invalid={fieldState.invalid}>
+											<FieldLabel htmlFor="stream">Stream</FieldLabel>
+											<Select
+												name={field.name}
+												value={field.value}
+												onValueChange={field.onChange}
 											>
-												<SelectValue placeholder="Select a stream" />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectGroup>
-													<SelectItem value="apple">Apple</SelectItem>
-													<SelectItem value="banana">Banana</SelectItem>
-													<SelectItem value="blueberry">Blueberry</SelectItem>
-												</SelectGroup>
-											</SelectContent>
-										</Select>
-										{fieldState.invalid && (
-											<FieldError errors={[fieldState.error]} />
-										)}
-									</Field>
-								)}
-							/>
+												<SelectTrigger
+													id="stream"
+													aria-invalid={fieldState.invalid}
+
+												>
+													<SelectValue placeholder="Select a stream" />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectGroup>
+														{
+															gradesQuery.data?.find((grade) => grade.id.toString() === selectedGrade)?.streams?.map((stream, index) =>
+																<SelectItem key={index} value={stream.id.toString()}>{stream.name}</SelectItem>
+															)
+														}
+													</SelectGroup>
+												</SelectContent>
+											</Select>
+											{fieldState.invalid && (
+												<FieldError errors={[fieldState.error]} />
+											)}
+										</Field>
+									)}
+								/>
+							}
 						</div>
 					</div>
 				</FieldGroup >

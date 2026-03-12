@@ -6,7 +6,7 @@
 //I don't need context
 // TODO: Define form here
 //
-import NewStudent from "@/components/forms/add-edit-student-from";
+import NewStudent from "@/components/forms/add-edit-student-form";
 
 
 export default function NewStudentPage() {
