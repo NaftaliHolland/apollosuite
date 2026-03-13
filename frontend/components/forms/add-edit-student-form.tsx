@@ -156,8 +156,8 @@ export default function NewStudent() {
 					<BasicInformation form={form} />
 				</TabsContent>
 
-				<TabsContent value="parent_details">
-					<p>Parent Details</p>
+				<TabsContent value="parent_details" className="w-full sm:w-[60vw]">
+					<ParentDetails form={form} />
 				</TabsContent>
 
 				<TabsContent value="additional_details">
@@ -431,9 +431,97 @@ export function BasicInformation({ form }: { form: UseFormReturn<any> }) {
 	)
 }
 
-export function ParentDetails() {
+export function ParentDetails({ form }: { form: UseFormReturn<any> }) {
+
 	return (
-		<div>Basic info</div>
+		<form>
+			<div className="flex flex-col gap-4">
+				<FieldGroup >
+					<div className="flex flex-row gap-2 sm:gap-4">
+						<Controller
+							name="parent_first_name"
+							control={form.control}
+							render={({ field, fieldState }) => (
+								<Field data-invalid={fieldState.invalid}>
+									<FieldLabel htmlFor="parent-first-name">Parent First Name</FieldLabel>
+									<Input
+										{...field}
+										id="parent-first-name"
+										type="text"
+										required
+									/>
+									{fieldState.invalid && (
+										<FieldError errors={[fieldState.error]} />
+									)}
+								</Field>
+							)}
+						/>
+
+						<Controller
+							name="parent_last_name"
+							control={form.control}
+							render={({ field, fieldState }) => (
+								<Field data-invalid={fieldState.invalid}>
+									<FieldLabel htmlFor="parent-last-name">Parent Last Name</FieldLabel>
+									<Input
+										{...field}
+										id="parent-last-name"
+										type="text"
+										required
+									/>
+									{fieldState.invalid && (
+										<FieldError errors={[fieldState.error]} />
+									)}
+								</Field>
+							)}
+						/>
+					</div>
+
+					<div className="flex flex-row gap-2 sm:gap-4">
+						<Controller
+							name="parent_email"
+							control={form.control}
+							render={({ field, fieldState }) => (
+								<Field data-invalid={fieldState.invalid}>
+									<FieldLabel htmlFor="parent-email">Parent Email</FieldLabel>
+									<Input
+										{...field}
+										id="parent-email"
+										type="email"
+										required
+									/>
+									{fieldState.invalid && (
+										<FieldError errors={[fieldState.error]} />
+									)}
+								</Field>
+							)}
+						/>
+
+						<Controller
+							name="parent_phone_number"
+							control={form.control}
+							render={({ field, fieldState }) => (
+								<Field data-invalid={fieldState.invalid}>
+									<FieldLabel htmlFor="parent-phone-number">Parent Phone Number</FieldLabel>
+									<Input
+										{...field}
+										id="parent-phone-number"
+										type="text"
+										required
+									/>
+									{fieldState.invalid && (
+										<FieldError errors={[fieldState.error]} />
+									)}
+								</Field>
+							)}
+						/>
+					</div>
+				</FieldGroup >
+
+				<div className="flex justify-between">
+				</div>
+			</div>
+		</form>
 	)
 }
 
