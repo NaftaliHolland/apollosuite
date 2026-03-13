@@ -65,6 +65,7 @@ class StudentProfileCreateSerializer(serializers.ModelSerializer):
         fields = [
             "first_name",
             "last_name",
+            "date_of_birth",
             "gender",
             "parent_first_name",
             "parent_last_name",
@@ -173,6 +174,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         fields = [
             "first_name",
             "last_name",
+            "date_of_birth",
             "gender",
             "grade",
             "school",

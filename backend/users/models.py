@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
 from django.db.models import Q, UniqueConstraint
 from utils.generate_fake_phone import generate_fake_phone
+from utils.validators import validate_not_in_the_future
 
 #from core.models import School
 
@@ -165,6 +166,7 @@ class StudentProfile(models.Model):
     ]
 
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True, related_name='studentprofile')
+    date_of_birth = models.DateField(validators=[validate_not_in_the_future], null=True, blank=True)
     school = models.ForeignKey("core.School", related_name="students", on_delete=models.CASCADE)
     grade = models.ForeignKey('core.Grade', on_delete=models.CASCADE, related_name='students', null=True, blank=True)
     stream = models.ForeignKey('core.Stream', on_delete=models.CASCADE, related_name='stream', null=True, blank=True)
