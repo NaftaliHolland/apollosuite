@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectLabel, SelectValue, SelectGroup } from "@/components/ui/select";
 import api from "@/lib/api";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -37,12 +37,13 @@ const formSchema = z.object({
 		.min(1, "Last name is required")
 		.max(255, "Cannot exeed 255 characters"),
 	gender: z
-		.enum(["f", "m", ""])
-		.refine((value) => value !== "", { message: "Gender is required" })
+		.enum(["f", "m"], "Gender is required")
 	,
 	date_of_birth: z
 		.coerce
-		.date(),
+		.date()
+		.optional()
+	,
 	parent_first_name: z
 		.string()
 		.min(1, "Parent first name is required")
@@ -78,32 +79,45 @@ export default function NewStudent() {
 		defaultValues: {
 			first_name: "",
 			last_name: "",
-			gender: "",
+			gender: "" as any,
 			parent_first_name: "",
 			parent_last_name: "",
 			parent_phone_number: "",
+			parent_email: "",
 			grade: "",
 			stream: "",
 			transfered_from: "",
 		}
 	})
 
-	function onSubmit(data: z.infer<typeof formSchema>) {
-		console.log(data)
-	}
 
 	const stepTabs = [
 		{
 			key: "basic_information",
 			title: "Basic information",
+			form_fields: [
+				"first_name",
+				"last_name",
+				"grade",
+				"stream",
+				"gender",
+				"date_of_birth",
+			],
 		},
 		{
 			key: "parent_details",
 			title: "Parent Details",
+			form_fields: [
+				"parent_first_name",
+				"parent_last_name",
+				"parent_email",
+				"Parent_phone_number",
+			],
 		},
 		{
 			key: "additional_details",
 			title: "Additional Details",
+			form_fields: ["transfered_from",],
 		}
 	]
 
@@ -113,10 +127,6 @@ export default function NewStudent() {
 
 
 	function handleNext(): void {
-		//const currentTab = stepTabs.find((step) => step.key === currentStep);
-
-		//let nextStepIndex = 0;
-		//if (currentTab) nextStepIndex = stepTabs.indexOf(currentTab) + 1;
 
 		const nextStepIndex = stepTabs.findIndex((step) => step.key === currentStep) + 1;
 
@@ -125,13 +135,21 @@ export default function NewStudent() {
 	}
 
 	function handlePrev(): void {
-		//const currentTab = stepTabs.find((step) => step.key === currentStep);
-
-		//let prevStepIndex = 0;
-		//if (currentTab) prevStepIndex = stepTabs.indexOf(currentTab) - 1;
 		const prevStepIndex = stepTabs.findIndex((step) => step.key === currentStep) - 1;
 
 		setCurrentStep(stepTabs[prevStepIndex].key as StepType);
+	}
+
+	function onSubmit(data: z.input<typeof formSchema>) {
+		console.log(data)
+	}
+
+	useEffect(() => {
+		console.log("Here", form.formState.errors);
+	}, [form.formState.errors])
+
+	function hasError(fields: string[]) {
+		return fields.some(field => field in form.formState.errors);
 	}
 
 	return (
@@ -140,17 +158,31 @@ export default function NewStudent() {
 			<Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as StepType)}>
 				<TabsList variant="line" className="gap-2 sm:gap-12 mb-4">
 					{stepTabs.map((step) =>
-						<TabsTrigger key={step.key} value={step.key}>{step.title}</TabsTrigger>
+						<TabsTrigger
+							key={step.key} value={step.key}
+							className={hasError(step.form_fields) ? "text-red-500 border-red-500 active" : ""}
+						>
+							{step.title}
+						</TabsTrigger>
 					)
 					}
 				</TabsList>
-				<Button
-					variant="ghost"
-					onClick={() => form.reset()}
-					className="ml-auto"
-				>
-					Clear Form
-				</Button>
+				{Object.keys(form.formState.errors).length > 0
+					&& <p className="text-orange-500 text-xs text-right">Some fields need your attention</p>
+				}
+				<div className="flex gap-4 justify-end">
+					<Button
+						variant="ghost"
+						onClick={() => form.reset()}
+					>
+						Clear Form
+					</Button>
+					<Button
+						onClick={form.handleSubmit(onSubmit)}
+					>
+						Add Student
+					</Button>
+				</div>
 
 				<TabsContent value="basic_information" className="w-full sm:w-[60vw]">
 					<BasicInformation form={form} />
@@ -160,9 +192,10 @@ export default function NewStudent() {
 					<ParentDetails form={form} />
 				</TabsContent>
 
-				<TabsContent value="additional_details">
-					<p>Additional Details</p>
+				<TabsContent value="additional_details" className="w-full sm:w-[60vw]">
+					<AdditionalDetails form={form} />
 				</TabsContent>
+
 				<div className="flex justify-end w-full sm:w-[10-vw]">
 					{!(stepTabs.findIndex((step) => step.key === currentStep) === 0) && <Button
 						variant="ghost"
@@ -331,97 +364,79 @@ export function BasicInformation({ form }: { form: UseFormReturn<any> }) {
 								/>
 							}
 						</div>
-						<Controller
-							name="gender"
-							control={form.control}
-							render={({ field, fieldState }) => (
-								<Field data-invalid={fieldState.invalid} className="flex-1">
-									<FieldLabel htmlFor="gender">Gender</FieldLabel>
-									<Select
-										name={field.name}
-										value={field.value}
-										onValueChange={field.onChange}
-									>
-										<SelectTrigger
-											id="gender"
-											aria-invalid={fieldState.invalid}
+						<div className="flex flex-row gap-2 sm:gap-4 flex-1">
+							<Controller
+								name="gender"
+								control={form.control}
+								render={({ field, fieldState }) => (
+									<Field data-invalid={fieldState.invalid} className="flex-1">
+										<FieldLabel htmlFor="gender">Gender</FieldLabel>
+										<Select
+											name={field.name}
+											value={field.value}
+											onValueChange={field.onChange}
 										>
-											<SelectValue placeholder="Select gender" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectGroup>
-												<SelectItem value="m">Male</SelectItem>
-												<SelectItem value="f">Female</SelectItem>
-											</SelectGroup>
-										</SelectContent>
-									</Select>
-									{fieldState.invalid && (
-										<FieldError errors={[fieldState.error]} />
-									)}
-								</Field>
-							)}
-						/>
-					</div>
-
-					<div className="flex flex-row gap-2 sm:gap-4">
-						<Controller
-							name="date_of_birth"
-							control={form.control}
-							render={({ field, fieldState }) => (
-								<Field data-invalid={fieldState.invalid}>
-									<FieldLabel htmlFor="date_of_birth">Date of Birth</FieldLabel>
-									<Popover open={dateOfBirthOpen} onOpenChange={setDateOfBirthOpen}>
-										<PopoverTrigger asChild>
-											<Button
-												variant="outline"
-												id="date"
-												className="justify-start font-normal"
+											<SelectTrigger
+												id="gender"
+												aria-invalid={fieldState.invalid}
 											>
-												{dateOfBirth ? dateOfBirth.toLocaleDateString() : "Select date"}
-											</Button>
-										</PopoverTrigger>
-										<PopoverContent className="overflow-hidden p-0" align="start">
-											<Calendar
-												mode="single"
-												className="w-full"
-												selected={dateOfBirth}
-												defaultMonth={dateOfBirth}
-												captionLayout="dropdown"
-												disabled={(date) => {
-													return date >= new Date()
-												}}
-												onSelect={(date) => {
-													setDateOfBirth(date)
-													setDateOfBirthOpen(false)
-												}}
-											/>
-										</PopoverContent>
-									</Popover>
-									{fieldState.invalid && (
-										<FieldError errors={[fieldState.error]} />
-									)}
-								</Field>
-							)}
-						/>
-
-						<Controller
-							name="transfered_from"
-							control={form.control}
-							render={({ field, fieldState }) => (
-								<Field data-invalid={fieldState.invalid}>
-									<FieldLabel htmlFor="transfered-from">Transfered From</FieldLabel>
-									<Input
-										{...field}
-										id="transfered-from"
-										type="text"
-									/>
-									{fieldState.invalid && (
-										<FieldError errors={[fieldState.error]} />
-									)}
-								</Field>
-							)}
-						/>
+												<SelectValue placeholder="Select gender" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectGroup>
+													<SelectItem value="m">Male</SelectItem>
+													<SelectItem value="f">Female</SelectItem>
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										{fieldState.invalid && (
+											<FieldError errors={[fieldState.error]} />
+										)}
+									</Field>
+								)}
+							/>
+							<Controller
+								name="date_of_birth"
+								control={form.control}
+								render={({ field, fieldState }) => (
+									<Field data-invalid={fieldState.invalid} className="flex-1">
+										<FieldLabel htmlFor="date_of_birth">Date of Birth</FieldLabel>
+										<Popover open={dateOfBirthOpen} onOpenChange={setDateOfBirthOpen}>
+											<PopoverTrigger asChild>
+												<Button
+													variant="outline"
+													id="date"
+													className="justify-start font-normal flex-1"
+												>
+													{dateOfBirth ? dateOfBirth.toLocaleDateString() : "Select date"}
+												</Button>
+											</PopoverTrigger>
+											<PopoverContent className="overflow-hidden p-0" align="start">
+												<Calendar
+													mode="single"
+													className="w-full"
+													selected={dateOfBirth}
+													defaultMonth={dateOfBirth}
+													captionLayout="dropdown"
+													disabled={(date) => {
+														return date >= new Date()
+													}}
+													onSelect={(date) => {
+														setDateOfBirth(date)
+														setDateOfBirthOpen(false)
+													}}
+												/>
+											</PopoverContent>
+										</Popover>
+										{fieldState.invalid && (
+											<FieldError errors={[fieldState.error]} />
+										)}
+									</Field>
+								)}
+							/>
+						</div>
 					</div>
+
 				</FieldGroup >
 
 				<div className="flex justify-between">
@@ -516,7 +531,7 @@ export function ParentDetails({ form }: { form: UseFormReturn<any> }) {
 							)}
 						/>
 					</div>
-				</FieldGroup >
+				</FieldGroup>
 
 				<div className="flex justify-between">
 				</div>
@@ -525,9 +540,31 @@ export function ParentDetails({ form }: { form: UseFormReturn<any> }) {
 	)
 }
 
-export function AdditionalDetails() {
+export function AdditionalDetails({ form }: { form: UseFormReturn<any> }) {
 
 	return (
-		<div>Basic info</div>
+		<form>
+			<div className="flex flex-col gap-4">
+				<FieldGroup >
+					<Controller
+						name="transfered_from"
+						control={form.control}
+						render={({ field, fieldState }) => (
+							<Field data-invalid={fieldState.invalid}>
+								<FieldLabel htmlFor="transfered-from">Transfered From</FieldLabel>
+								<Input
+									{...field}
+									id="transfered-from"
+									type="text"
+								/>
+								{fieldState.invalid && (
+									<FieldError errors={[fieldState.error]} />
+								)}
+							</Field>
+						)}
+					/>
+				</FieldGroup>
+			</div>
+		</form>
 	)
 }
