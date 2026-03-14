@@ -15,14 +15,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectLabel, SelectValue, SelectGroup } from "@/components/ui/select";
 import api from "@/lib/api";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LocalStorageSchool, Grade } from "@/types";
 import { Calendar } from "@/components/ui/calendar";
+import { toast } from "sonner";
 import {
 	Popover,
 	PopoverTrigger,
 	PopoverContent,
 } from "@/components/ui/popover";
+import { useRouter } from "next/navigation";
 
 // TODO: Write validation for phone number
 //
@@ -53,28 +55,28 @@ const formSchema = z.object({
 		.min(1, "Parent last name is required")
 		.max(255, "Cannot exeed 255 characters"),
 	parent_email: z
-		.string()
-		.email("Invalid email address")
+		.union([z.literal(""), z.string().email("Invalid email address")])
 		.optional(),
 	parent_phone_number: z
 		.string()
 		.min(10, "Phone number is too short")
 		.max(15, "Phone number is too long"),
 	grade: z
-		.coerce
-		.number()
+		.string()
 		.optional(),
 	stream: z
-		.coerce
-		.number()
+		.string()
 		.optional(),
 	transfered_from: z
 		.string()
 		.optional()
 })
 
+type FormInput = z.input<typeof formSchema>;
+type FormOutput = z.input<typeof formSchema>;
+
 export default function NewStudent() {
-	const form = useForm<z.input<typeof formSchema>>({
+	const form = useForm<FormInput, any, FormOutput>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			first_name: "",
@@ -140,17 +142,36 @@ export default function NewStudent() {
 		setCurrentStep(stepTabs[prevStepIndex].key as StepType);
 	}
 
-	function onSubmit(data: z.input<typeof formSchema>) {
-		console.log(data)
+	function onSubmit(data: FormOutput) {
+		addStudentMutation.mutate(data);
 	}
-
-	useEffect(() => {
-		console.log("Here", form.formState.errors);
-	}, [form.formState.errors])
 
 	function hasError(fields: string[]) {
 		return fields.some(field => field in form.formState.errors);
 	}
+
+	const currentSchool = localStorage.getItem("active_school");
+
+	const school: LocalStorageSchool = JSON.parse(currentSchool ? currentSchool : "");
+
+	const queryClient = useQueryClient();
+	const router = useRouter();
+
+	const addStudentMutation = useMutation({
+		mutationFn: async (data: FormOutput): Promise<any> => {
+			const response = await api.post(`/schools/${school.school_id}/students/`, data)
+			return response.data
+		},
+		onSuccess: () => {
+			toast.success("Student added successfully");
+			form.reset();
+			queryClient.invalidateQueries({ queryKey: ["students"] });
+			router.push("/students");
+		},
+		onError: (error: any) => {
+			toast.error(error.response?.data?.detail);
+		}
+	})
 
 	return (
 		<div className="p-2 sm:p-4 flex flex-col gap-2 sm:gap-4">
@@ -160,15 +181,21 @@ export default function NewStudent() {
 					{stepTabs.map((step) =>
 						<TabsTrigger
 							key={step.key} value={step.key}
-							className={hasError(step.form_fields) ? "text-red-500 border-red-500 active" : ""}
+							className={`"relative " ${hasError(step.form_fields) ? "after:bg-orange-500 " : ""}`}
 						>
 							{step.title}
+							{hasError(step.form_fields) && <div className="w-2 h-2 rounded-full bg-orange-500 absolute -right-1 -top-1 animate-pulse">
+							</div>
+							}
 						</TabsTrigger>
 					)
 					}
 				</TabsList>
 				{Object.keys(form.formState.errors).length > 0
-					&& <p className="text-orange-500 text-xs text-right">Some fields need your attention</p>
+					&& <div className="flex justify-end items-center gap-2">
+						<div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+						<p className="text-orange-500 text-xs text-right">Some fields need your attention</p>
+					</div>
 				}
 				<div className="flex gap-4 justify-end">
 					<Button

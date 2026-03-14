@@ -243,7 +243,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
 						>
 							<a href="#">
 								<GalleryVerticalEnd className="size-5!" />
-								<span className="text-base font-semibold">Acme Inc.</span>
+								<span className="text-base font-semibold">Apollosuite</span>
 							</a>
 						</SidebarMenuButton>
 					</SidebarMenuItem>

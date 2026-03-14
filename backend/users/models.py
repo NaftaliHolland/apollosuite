@@ -186,6 +186,9 @@ class StudentProfile(models.Model):
     def __str__(self):
         return f"StudentProfile({self.user.first_name} - {self.user.last_name})"
 
+    class Meta:
+        ordering = ["-created_at"]
+
 class ParentProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True, related_name='parentprofile')
     schools = models.ManyToManyField('core.School', related_name="parents", blank=True)
