@@ -43,3 +43,11 @@ export type Grade = {
 
 export type GradeDetail = {
 }
+
+export type AcademicYear = {
+	id: number;
+	name: string;
+	start_date: string;
+	end_date: string;
+	is_active: boolean;
+}

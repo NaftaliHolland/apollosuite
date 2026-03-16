@@ -1,7 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-
 from services.assign_admin_to_school import assign_admin_to_school
 
 from .models import AcademicYear, Grade, School, Stream, Term
@@ -169,6 +168,7 @@ class StreamSerializer(serializers.ModelSerializer):
 
 class AcademicYearSerializer(serializers.ModelSerializer):
     school = serializers.HiddenField(default=CurrentSchoolDefault())
+    is_active = serializers.SerializerMethodField()
 
     class Meta:
         model = AcademicYear
@@ -178,13 +178,13 @@ class AcademicYearSerializer(serializers.ModelSerializer):
             'name',
             'start_date',
             'end_date',
-            'created_at',
-            'updated_at',
+            'is_active',
         ]
 
         read_only_fields = [
             'id',
             'created_at',
+            'is_active',
         ]
 
 
@@ -195,6 +195,9 @@ class AcademicYearSerializer(serializers.ModelSerializer):
                 message='An academic year with a similar name already exists',
             )
         ]
+
+    def get_is_active(self, obj):
+        return obj.school.current_academic_year == obj
 
     def validate(self, attrs):
         start_date = attrs.get('start_date')

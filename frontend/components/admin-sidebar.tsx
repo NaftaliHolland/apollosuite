@@ -9,6 +9,7 @@ import {
 	Users,
 	Banknote,
 	ChevronRight,
+	ClipboardList,
 } from "lucide-react"
 import {
 	Collapsible,
@@ -66,6 +67,33 @@ const data = {
 				{
 					title: "School expenses",
 					url: "finance/school-expenses"
+				},
+			]
+		},
+		{
+			title: "Administration",
+			url: "#",
+			icon: ClipboardList,
+			items: [
+				{
+					title: "Grades",
+					url: "administration/fee-items"
+				},
+				{
+					title: "Fee Items",
+					url: "administration/fee-items"
+				},
+				{
+					title: "Discounts",
+					url: "administration/discounts"
+				},
+				{
+					title: "Academic Years",
+					url: "administration/academic-years"
+				},
+				{
+					title: "Calendar",
+					url: "administration/calendar"
 				},
 			]
 		},
@@ -188,17 +216,23 @@ export function NavMain({
 									? (
 										<>
 											<CollapsibleTrigger asChild>
-												<SidebarMenuButton tooltip={item.title} isActive={pathname.includes(item.url)}>
+												<SidebarMenuButton
+													tooltip={item.title}
+													isActive={
+														item.items
+															.map((sub) => sub.url)
+															.some(path => pathname.includes(path))
+													}>
 													{item.icon && <item.icon />}
 													<span>{item.title}</span>
-													<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+													<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-gray-500" />
 												</SidebarMenuButton>
 											</CollapsibleTrigger>
 											<CollapsibleContent>
 												<SidebarMenuSub>
 													{item.items?.map((subItem) => (
 														<SidebarMenuSubItem key={subItem.title}>
-															<SidebarMenuSubButton asChild>
+															<SidebarMenuSubButton asChild isActive={pathname.includes(subItem.url)}>
 																<Link href={subItem.url}>
 																	<span>{subItem.title}</span>
 																</Link>

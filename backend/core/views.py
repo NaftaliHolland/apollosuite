@@ -76,7 +76,6 @@ class AcademicYearViewSet(viewsets.ModelViewSet):
         school_id = self.kwargs["school_pk"]
         return AcademicYear.objects.filter(
             school_id=school_id,
-            school__users=self.request.user,
         )
 
 class TermViewSet(viewsets.ModelViewSet):
