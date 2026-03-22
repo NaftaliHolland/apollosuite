@@ -75,13 +75,14 @@ const data = {
 			url: "#",
 			icon: ClipboardList,
 			items: [
+				// Remove grade from here and give it its own page and table of course
 				{
 					title: "Grades",
-					url: "administration/fee-items"
+					url: "administration/grades"
 				},
 				{
 					title: "Fee Items",
-					url: "administration/fee-items"
+					url: "/administration/fee-items"
 				},
 				{
 					title: "Discounts",

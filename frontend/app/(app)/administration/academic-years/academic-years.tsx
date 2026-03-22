@@ -2,7 +2,7 @@
 
 import api from "@/lib/api";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AcademicYear, LocalStorageSchool } from "@/types";
+import { AcademicYear, LocalStorageSchool, Term } from "@/types";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,19 +23,30 @@ export function AcademicYears() {
 	const currentSchool = localStorage.getItem("active_school");
 
 	const school: LocalStorageSchool = JSON.parse(currentSchool ? currentSchool : "");
+	const [selectedYear, setSelectedYear] = useState<AcademicYear | undefined>(undefined);
 
 	const { data: academicYears, isLoading, error } = useQuery({
 		queryKey: ["academicYears"],
 		queryFn: async (): Promise<AcademicYear[]> => {
 			const response = await api.get(`/schools/${school.school_id}/academic-years/`)
 
+			setSelectedYear(response.data.find((year: AcademicYear) => year.is_active === true));
+
 			return response.data;
-		}
+		},
 	})
 
 	const [addYearOpen, setAddYearOpen] = useState(false);
 
-	const [selectedYear, setSelectedYear] = useState<AcademicYear | undefined>(academicYears?.find(year => year.is_active === true))
+	const termsQuery = useQuery({
+		queryKey: [selectedYear, "terms"],
+		queryFn: async (): Promise<Term[]> => {
+			const response = await api.get(`/schools/${school.school_id}/academic-years/${selectedYear?.id}/terms/`)
+
+			return response.data;
+		},
+		enabled: !!selectedYear,
+	})
 
 	return (
 		<div className="py-4 px-8">
@@ -76,6 +87,7 @@ export function AcademicYears() {
 											? "bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-600"
 											: "hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent"
 											}`}
+										onClick={() => setSelectedYear(academicYear)}
 									>
 										<div className="flex items-center justify-between mb-1">
 											<span className="font-semibold">{academicYear.name}</span>
@@ -92,13 +104,33 @@ export function AcademicYears() {
 							</div>
 
 							{/* TODO: Have a query that gets detaild info about that academic year, actually useful details*/}
-							<div className="md:col-span-3 bg-gray-300 p-4">
+							<div className="md:col-span-3 p-4 border-l space-y-4">
 								{selectedYear && (
 									<div>
+										<p className="font-semibold">{selectedYear.name}</p>
+										<span className="text-xs text-gray-600 dark:text-gray-400">
+											{selectedYear.start_date}
+										</span>
+										<span className="text-xs text-gray-600 dark:text-gray-400">
+											{selectedYear.end_date}
+										</span>
 									</div>
-
 								)
 								}
+								{termsQuery.isLoading &&
+									<p>Loading ...</p>
+								}
+								{termsQuery.data && (
+									<div className="flex gap-4">
+										{termsQuery.data.map((term, index) =>
+										(
+											<div key={index} className="border rounded-sm py-2 px-4">
+												<p className="text-md text-gray-700">{term.name}</p>
+											</div>
+										)
+										)}
+									</div>
+								)}
 							</div>
 
 						</div>

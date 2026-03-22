@@ -213,6 +213,24 @@ class AcademicYearSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         return  value.replace(' ', '').lower()
 
+class AcademicYearListSerializer(serializers.ModelSerializer):
+    school = serializers.HiddenField(default=CurrentSchoolDefault())
+    is_active = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AcademicYear
+        fields = [
+            'id',
+            'school',
+            'name',
+            'start_date',
+            'end_date',
+            'is_active',
+        ]
+
+    def get_is_active(self, obj):
+        return obj.school.current_academic_year == obj
+
 class CurrentAcademicYearDefault:
     requires_context = True
 

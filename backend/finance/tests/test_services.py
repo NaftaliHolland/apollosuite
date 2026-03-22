@@ -3,8 +3,14 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
-from finance.models import (Discount, FeeItem, GradeFeeItem, Payment,
-                            PaymentItem, StudentDiscount, StudentFeeAssignment)
+from finance.models import (
+    Discount,
+    FeeItem,
+    GradeFeeItem,
+    Payment,
+    PaymentItem,
+    StudentDiscount,StudentFeeAssignment
+)
 from finance.services import (assign_fees_to_student,
                               assign_grade_fee_item_to_students,
                               recalculate_student_discounts, record_payment)

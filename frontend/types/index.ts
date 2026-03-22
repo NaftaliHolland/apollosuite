@@ -51,3 +51,20 @@ export type AcademicYear = {
 	end_date: string;
 	is_active: boolean;
 }
+
+export type Term = {
+    id: number;
+    name: string;
+    order: number;
+    start_date: Date;
+    end_date: Date;
+    created_at: Date;
+    updated_at: Date;
+}
+
+export type FeeItem = {
+  id: number
+  name: string
+  description: string
+  is_active: boolean
+}
