@@ -51,6 +51,11 @@ const data = {
 			icon: Users,
 		},
 		{
+			title: "grades",
+			url: "/grades",
+			icon: GraduationCap,
+		},
+		{
 			title: "Teachers",
 			url: "#",
 			icon: GraduationCap,
@@ -76,10 +81,10 @@ const data = {
 			icon: ClipboardList,
 			items: [
 				// Remove grade from here and give it its own page and table of course
-				{
-					title: "Grades",
-					url: "administration/grades"
-				},
+				//{
+				//	title: "Grades",
+				//	url: "administration/grades"
+				//},
 				{
 					title: "Fee Items",
 					url: "/administration/fee-items"

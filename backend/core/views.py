@@ -66,7 +66,6 @@ class StreamViewSet(viewsets.ModelViewSet):
         school_id = self.kwargs["school_pk"]
         return Stream.objects.filter(
             school_id=school_id,
-            school__users=self.request.user,
         )
 
 class AcademicYearViewSet(viewsets.ModelViewSet):
