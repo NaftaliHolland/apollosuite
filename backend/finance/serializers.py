@@ -1,5 +1,5 @@
 from core.models import AcademicYear, Term
-from core.serializers import CurrentSchoolDefault
+from core.serializers import CurrentAcademicYearDefault, CurrentSchoolDefault
 from rest_framework import serializers
 from users.models import StudentProfile
 
@@ -35,6 +35,8 @@ class FeeItemCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 class GradeFeeItemSerializer(serializers.ModelSerializer):
+    academic_year = serializers.CharField(default=CurrentAcademicYearDefault())
+
     class Meta:
         model = GradeFeeItem
         fields = [

@@ -73,7 +73,7 @@ const formSchema = z.object({
 })
 
 type FormInput = z.input<typeof formSchema>;
-type FormOutput = z.input<typeof formSchema>;
+type FormOutput = z.infer<typeof formSchema>;
 
 export default function NewStudent() {
 	const form = useForm<FormInput, any, FormOutput>({

@@ -109,18 +109,18 @@ class PaymentViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == "create":
             return PaymentCreateSerializer
-        return PaymentSerializer 
+        return PaymentSerializer
 
     def update(self, request, *args, **kwargs):
         return Response(
             {"detail": "Payment cannot be modified"},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     def destroy(self, request, *args, **kwargs):
         return Response(
             {"detail": "Payments cannot be deleted"},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     def create(self, request, *args, **kwargs):
@@ -139,10 +139,9 @@ class PaymentViewSet(ModelViewSet):
             academic_year=school.current_academic_year,
             allocations=data["allocations"],
             reference=data["reference"],
-            note=data["note"]
+            note=data["note"],
         )
 
         return Response(
-            PaymentSerializer(payments, many=True).data,
-            status=status.HTTP_201_CREATED
+            PaymentSerializer(payments, many=True).data, status=status.HTTP_201_CREATED
         )

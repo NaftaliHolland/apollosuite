@@ -1,9 +1,24 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import {
+	DropdownMenu,
+	DropdownMenuTrigger,
+	DropdownMenuItem,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuLabel,
+	DropdownMenuPortal,
+	DropdownMenuSeparator,
+	DropdownMenuShortcut,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu";
 import { FeeItem, LocalStorageSchool } from "@/types";
+import { GradeFeeAssignmentForm } from "@/components/forms/grade-fee-assignment-form";
 import { FeeItemForm } from "@/components/forms/fee-item-form";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -15,7 +30,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus } from "lucide-react";
+import { Plus, Ellipsis, Pencil, GraduationCap } from "lucide-react";
 
 export function FeeItems() {
 
@@ -33,6 +48,9 @@ export function FeeItems() {
 	})
 
 	const [addFeeItemOpen, setAddFeeItemOpen] = useState(false);
+	const [assignToGradesOpen, setAssignToGradesOpen] = useState(false);
+
+	const [selectedFeeItem, setSelectedFeeItem] = useState<number | undefined>(undefined);
 
 	return (
 		<div className="max-w-7xl mx-auto">
@@ -67,12 +85,52 @@ export function FeeItems() {
 						{feeItems.map((feeItem: FeeItem) =>
 							<div
 								key={feeItem.id}
-								className="group flex flex-col p-5 rounded-sm hover:bg-muted/60 transition-colors border border-1"
+								className="group flex flex-col p-4 rounded-sm border border-1"
 							>
 								<div className="flex-1 space-y-2">
-									<h3 className="font-semibold text-foreground">
-										{feeItem.name}
-									</h3>
+									<div className="flex justify-between align-center">
+										<h3 className="font-semibold text-foreground">
+											{feeItem.name}
+										</h3>
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													aria-label="actions"
+												>
+
+
+													<Ellipsis />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent className="w-fit">
+												<DropdownMenuLabel>Actions</DropdownMenuLabel>
+												<DropdownMenuItem
+
+												>
+													<Pencil />
+													Edit
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onSelect={() => {
+														setSelectedFeeItem(feeItem.id)
+														setAssignToGradesOpen(true)
+													}
+													}
+												>
+													<GraduationCap />
+													Assign to grades
+												</DropdownMenuItem>
+												<DropdownMenuSeparator />
+												<DropdownMenuItem>
+													{/* TODO: This should be a toggle for active or inactive */}
+													Active
+												</DropdownMenuItem>
+											</DropdownMenuContent>
+
+										</DropdownMenu>
+									</div>
 									<p className="text-sm text-muted-foreground leading-relaxed">
 										{feeItem.description}
 									</p>
@@ -80,6 +138,19 @@ export function FeeItems() {
 							</div>
 						)}
 					</div>
+
+					{/* TODO: Should this be a separate component - I think so, it looks weird here */}
+					<Dialog open={assignToGradesOpen} onOpenChange={setAssignToGradesOpen}>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Add Fee Item</DialogTitle>
+								<DialogDescription className="sr-only">
+									Add a new fee Item
+								</DialogDescription>
+							</DialogHeader>
+							<GradeFeeAssignmentForm handleClose={() => setAssignToGradesOpen(false)} selectedFeeItem={selectedFeeItem} />
+						</DialogContent>
+					</Dialog>
 				</>
 			)}
 		</div>
