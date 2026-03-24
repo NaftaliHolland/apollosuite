@@ -11,6 +11,7 @@ import {
 	ChevronRight,
 	ClipboardList,
 } from "lucide-react"
+import { Button } from "@/components/ui/button";
 import {
 	Collapsible,
 	CollapsibleTrigger,
@@ -62,7 +63,7 @@ const data = {
 		},
 		{
 			title: "Finance",
-			url: "#",
+			url: "/finance",
 			icon: Banknote,
 			items: [
 				{
@@ -221,19 +222,23 @@ export function NavMain({
 								{item.items
 									? (
 										<>
-											<CollapsibleTrigger asChild>
-												<SidebarMenuButton
-													tooltip={item.title}
-													isActive={
-														item.items
-															.map((sub) => sub.url)
-															.some(path => pathname.includes(path))
-													}>
+											<SidebarMenuButton
+												tooltip={item.title}
+												isActive={
+													pathname.includes(item.url) ||
+													item.items
+														.map((sub) => sub.url)
+														.some(path => pathname.includes(path))
+												}
+											>
+												<Link href={item.url} className="flex flex-1 gap-2">
 													{item.icon && <item.icon />}
 													<span>{item.title}</span>
+												</Link>
+												<CollapsibleTrigger className="ml-auto" asChild>
 													<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-gray-500" />
-												</SidebarMenuButton>
-											</CollapsibleTrigger>
+												</CollapsibleTrigger>
+											</SidebarMenuButton>
 											<CollapsibleContent>
 												<SidebarMenuSub>
 													{item.items?.map((subItem) => (

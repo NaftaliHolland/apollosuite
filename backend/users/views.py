@@ -12,9 +12,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import PROFILE_ROLES, StudentProfile
-from .serializers import (RegisterSerializer, StudentProfileCreateSerializer,
-                          StudentProfileListSerializer,
-                          StudentProfileSerializer, UserSerializer)
+from .serializers import (
+    RegisterSerializer,
+    StudentProfileCreateSerializer,
+    StudentProfileListSerializer,
+    StudentProfileSerializer,
+    StudentSummarySerializer,
+    UserSerializer
+)
 
 User = get_user_model()
 
@@ -129,7 +134,11 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == "list":
+            if self.request.query_params.get("type", None) == "summary":
+                return StudentSummarySerializer
+
             return StudentProfileListSerializer
+
         elif self.action in ["retrieve", "partial_update", "update"]:
             return StudentProfileSerializer
         else:
@@ -147,7 +156,7 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if self.action in ["retrieve", "partial_update", "update"] or user.is_staff:
-            return StudentProfile.objects.all()
+            return StudentProfile.objects.select_related("user")
 
         return StudentProfile.objects.for_school(school_id)
 

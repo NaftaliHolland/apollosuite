@@ -1,11 +1,10 @@
+from core.models import School
+from core.serializers import CurrentSchoolDefault
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from utils.generate_admission_number import generate_admission_number
 from utils.generate_fake_phone import generate_fake_phone
-
-from core.models import School
-from core.serializers import CurrentSchoolDefault
 
 from .models import PROFILE_ROLES, CustomUser, ParentProfile, StudentProfile
 
@@ -189,6 +188,13 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+class StudentSummarySerializer(serializers.Serializer):
+    id = serializers.CharField(source="user.id")
+    name = serializers.CharField(source="user.get_full_name")
+    admission_number = serializers.CharField()
+    assessment_number = serializers.CharField()
+
 
 class StudentProfileListSerializer(serializers.ModelSerializer):
     """Lighter serializer for list views"""

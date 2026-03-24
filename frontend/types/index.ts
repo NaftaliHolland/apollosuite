@@ -28,7 +28,6 @@ export type Student = {
 export type StudentDetail = {
 }
 
-
 export type Stream = {
 	id: number;
 	name: string;
