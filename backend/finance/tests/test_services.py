@@ -1,24 +1,16 @@
+from decimal import Decimal
+
 from core.models import AcademicYear, Grade, School, Term
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
-from finance.models import (
-    Discount,
-    FeeItem,
-    GradeFeeItem,
-    Payment,
-    PaymentItem,
-    StudentDiscount,
-    StudentFeeAssignment,
-)
-from finance.services import (
-    assign_fees_to_student,
-    assign_grade_fee_item_to_students,
-    get_student_fee_summary,
-    recalculate_student_discounts,
-    record_payment,
-)
+from finance.models import (Discount, FeeItem, GradeFeeItem, Payment,
+                            PaymentItem, StudentDiscount, StudentFeeAssignment)
+from finance.services import (assign_fees_to_student,
+                              assign_grade_fee_item_to_students,
+                              get_student_fee_summary,
+                              recalculate_student_discounts, record_payment)
 
 from users.models import AdminProfile, StudentProfile
 
@@ -1669,6 +1661,7 @@ class StudentFeeSummaryTest(TestCase):
         student_details = fee_summary.get("student", None)
         academic_period = fee_summary.get("academic_period", None)
         summary = fee_summary.get("summary", None)
+        fee_assignments = fee_summary.get("fee_assignments", None)
 
         self.assertEqual(
             student_details,
@@ -1691,11 +1684,31 @@ class StudentFeeSummaryTest(TestCase):
         self.assertEqual(
             summary,
             {
-                "total_fees_due": 600,
-                "previously_paid": 250,
-                "discounts_applied": 0,
-                "outstanding_balance": 350,
-                "arrears_balance": 0,
-                "credit_balance": 0,
+                "total_fees_due": Decimal(600),
+                "previously_paid": Decimal(250),
+                "discounts_applied": Decimal(0),
+                "outstanding_balance": Decimal(350),
+                "arrears_balance": Decimal(0),
+                "credit_balance": Decimal(0),
             },
+        )
+
+        self.assertEqual(
+            fee_assignments,
+            [
+                {
+                    "fee_assignment_id": 1,
+                    "fee_item_name": "Tuition",
+                    "amount": Decimal(400),
+                    "paid": Decimal(200),
+                    "balance": Decimal(200),
+                },
+                {
+                    "fee_assignment_id": 2,
+                    "fee_item_name": "Activity",
+                    "amount": Decimal(200),
+                    "paid": Decimal(50),
+                    "balance": Decimal(150),
+                }
+            ]
         )

@@ -1,7 +1,8 @@
 from core.models import AcademicYear, Term
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import DecimalField, F, Sum
+from django.db.models.functions import Coalesce
 from finance.models import (Discount, FeeItem, GradeFeeItem, Payment,
                             PaymentItem, StudentDiscount, StudentFeeAssignment)
 
@@ -366,7 +367,6 @@ def get_student_fee_summary(
     
     balance = sum(student_fee_assignment.balance for student_fee_assignment in student_fee_assignments)
 
-
     fee_summary["summary"] = {
         "total_fees_due": total_fees_due, # supposed to pay for this period
         "previously_paid": previously_paid, # Already paid
@@ -375,5 +375,16 @@ def get_student_fee_summary(
         "arrears_balance": 0, # Carried from previous terms
         "credit_balance": 0, # Overpayment
     }
+
+    fee_assignments = [{
+        "fee_assignment_id": fee_assignment.id,
+        "fee_item_name": fee_assignment.grade_fee_item.fee_item.name,
+        "amount": fee_assignment.net_amount,
+        "paid": fee_assignment.amount_paid,
+        "balance": fee_assignment.balance,
+    } for fee_assignment in student_fee_assignments
+    ]
+
+    fee_summary["fee_assignments"] = fee_assignments
 
     return fee_summary
