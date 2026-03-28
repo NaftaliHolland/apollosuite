@@ -167,3 +167,7 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
 
         if data.get('grade'):
             assign_fees_to_student(student, academic_year)
+
+    @action(detail=True, methods=["get"], url_path="fee-summary")
+    def fee_summary(self, request, pk=None, *args, **kwargs):
+        return Response("Nigga please")

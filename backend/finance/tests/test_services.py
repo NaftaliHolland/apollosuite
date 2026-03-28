@@ -9,14 +9,21 @@ from finance.models import (
     GradeFeeItem,
     Payment,
     PaymentItem,
-    StudentDiscount,StudentFeeAssignment
+    StudentDiscount,
+    StudentFeeAssignment,
 )
-from finance.services import (assign_fees_to_student,
-                              assign_grade_fee_item_to_students,
-                              recalculate_student_discounts, record_payment)
+from finance.services import (
+    assign_fees_to_student,
+    assign_grade_fee_item_to_students,
+    get_student_fee_summary,
+    recalculate_student_discounts,
+    record_payment,
+)
+
 from users.models import AdminProfile, StudentProfile
 
 User = get_user_model()
+
 
 class AssignFeeToStudentTest(TestCase):
     def setUp(self):
@@ -75,11 +82,8 @@ class AssignFeeToStudentTest(TestCase):
             password="unsecurePass123",
         )
         self.student = StudentProfile.objects.create(
-            user=student_user,
-            school=self.school,
-            grade=self.grade1
+            user=student_user, school=self.school, grade=self.grade1
         )
-
 
     def test_per_term_creates_one_per_term(self):
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
@@ -200,26 +204,26 @@ class RecalculateStudentDiscountTests(TestCase):
             user=student_user, school=self.school, grade=self.grade1
         )
 
-        #self.tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
-        #self.activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
+        # self.tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
+        # self.activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
 
-        #self.tuition_grade_fee_item = GradeFeeItem.objects.create(
+        # self.tuition_grade_fee_item = GradeFeeItem.objects.create(
         #    fee_item=self.tuition_fee_item,
         #    grade=self.grade1,
         #    academic_year=self.academic_year,
         #    amount=3500,
         #    frequency="per_term",
-        #)
+        # )
 
-        #self.activity_grade_fee_item = GradeFeeItem.objects.create(
+        # self.activity_grade_fee_item = GradeFeeItem.objects.create(
         #    fee_item=self.activity_fee_item,
         #    grade=self.grade1,
         #    academic_year=self.academic_year,
         #    amount=200,
         #    frequency="yearly",
-        #)
+        # )
 
-        #self.student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
+        # self.student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
         #    student=self.student,
         #    grade_fee_item=self.tuition_grade_fee_item,
         #    term=self.term1,
@@ -227,9 +231,9 @@ class RecalculateStudentDiscountTests(TestCase):
         #    gross_amount=self.tuition_grade_fee_item.amount,
         #    discount_amount=0,
         #    net_amount=self.tuition_grade_fee_item.amount,
-        #)
+        # )
 
-        #self.student_activity_fee_assignment = StudentFeeAssignment.objects.create(
+        # self.student_activity_fee_assignment = StudentFeeAssignment.objects.create(
         #    student=self.student,
         #    grade_fee_item=self.activity_grade_fee_item,
         #    term=self.term1,
@@ -237,38 +241,38 @@ class RecalculateStudentDiscountTests(TestCase):
         #    gross_amount=self.activity_grade_fee_item.amount,
         #    discount_amount=0,
         #    net_amount=self.activity_grade_fee_item.amount,
-        #)
+        # )
 
-        #self.fixed_discount = Discount.objects.create(
+        # self.fixed_discount = Discount.objects.create(
         #    name="500 shillings discount on everything",
         #    discount_type="general",
         #    value_type="fixed",
         #    value=500,
-        #)
+        # )
 
-        #self.tuition_fixed_discount = Discount.objects.create(
+        # self.tuition_fixed_discount = Discount.objects.create(
         #    name="200 shillings discount on tuition",
         #    discount_type="general",
         #    value_type="fixed",
         #    value=200,
         #    fee_item=self.tuition_fee_item
-        #)
+        # )
 
-        #self.percentage_discount = Discount.objects.create(
+        # self.percentage_discount = Discount.objects.create(
         #    name="10% discount on everything",
         #    discount_type="general",
         #    value_type="percentage",
         #    value=10,
-        #)
+        # )
 
-        #self.tuition_percentage_discount = Discount.objects.create(
+        # self.tuition_percentage_discount = Discount.objects.create(
         #    name="10% discount on tuition",
         #    discount_type="general",
         #    value_type="percentage",
         #    value=10,
         #    fee_item=self.tuition_fee_item
-        #)
-    
+        # )
+
     def test_resets_existing_discount(self):
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
 
@@ -302,7 +306,6 @@ class RecalculateStudentDiscountTests(TestCase):
         self.assertEqual(student_tuition_fee_assignment.discount_amount, 0)
         self.assertEqual(student_tuition_fee_assignment.net_amount, 3000)
 
-
     def test_one_percentage_fee_item_discount(self):
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
 
@@ -312,9 +315,8 @@ class RecalculateStudentDiscountTests(TestCase):
             discount_type="general",
             value_type="percentage",
             value=10,
-            fee_item=tuition_fee_item
+            fee_item=tuition_fee_item,
         )
-
 
         tuition_grade_fee_item = GradeFeeItem.objects.create(
             fee_item=tuition_fee_item,
@@ -356,9 +358,8 @@ class RecalculateStudentDiscountTests(TestCase):
             discount_type="general",
             value_type="fixed",
             value=200,
-            fee_item=tuition_fee_item
+            fee_item=tuition_fee_item,
         )
-
 
         tuition_grade_fee_item = GradeFeeItem.objects.create(
             fee_item=tuition_fee_item,
@@ -401,7 +402,7 @@ class RecalculateStudentDiscountTests(TestCase):
             discount_type="general",
             value_type="fixed",
             value=500,
-            fee_item=tuition_fee_item
+            fee_item=tuition_fee_item,
         )
 
         activity_fixed_discount = Discount.objects.create(
@@ -410,7 +411,7 @@ class RecalculateStudentDiscountTests(TestCase):
             discount_type="general",
             value_type="fixed",
             value=100,
-            fee_item=activity_fee_item
+            fee_item=activity_fee_item,
         )
 
         tuition_grade_fee_item = GradeFeeItem.objects.create(
@@ -422,11 +423,11 @@ class RecalculateStudentDiscountTests(TestCase):
         )
 
         activity_grade_fee_item = GradeFeeItem.objects.create(
-             fee_item=activity_fee_item,
-             grade=self.grade1,
-             academic_year=self.academic_year,
-             amount=200,
-             frequency="yearly",
+            fee_item=activity_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=200,
+            frequency="yearly",
         )
 
         student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
@@ -460,7 +461,7 @@ class RecalculateStudentDiscountTests(TestCase):
                     student=self.student,
                     discount=activity_fixed_discount,
                     academic_year=self.academic_year,
-                )
+                ),
             ]
         )
 
@@ -485,7 +486,7 @@ class RecalculateStudentDiscountTests(TestCase):
             discount_type="general",
             value_type="percentage",
             value=10,
-            fee_item=tuition_fee_item
+            fee_item=tuition_fee_item,
         )
 
         activity_percentage_discount = Discount.objects.create(
@@ -494,7 +495,7 @@ class RecalculateStudentDiscountTests(TestCase):
             discount_type="general",
             value_type="percentage",
             value=5,
-            fee_item=activity_fee_item
+            fee_item=activity_fee_item,
         )
 
         tuition_grade_fee_item = GradeFeeItem.objects.create(
@@ -506,11 +507,11 @@ class RecalculateStudentDiscountTests(TestCase):
         )
 
         activity_grade_fee_item = GradeFeeItem.objects.create(
-             fee_item=activity_fee_item,
-             grade=self.grade1,
-             academic_year=self.academic_year,
-             amount=200,
-             frequency="yearly",
+            fee_item=activity_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=200,
+            frequency="yearly",
         )
 
         student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
@@ -544,7 +545,7 @@ class RecalculateStudentDiscountTests(TestCase):
                     student=self.student,
                     discount=activity_percentage_discount,
                     academic_year=self.academic_year,
-                )
+                ),
             ]
         )
 
@@ -581,11 +582,11 @@ class RecalculateStudentDiscountTests(TestCase):
         )
 
         activity_grade_fee_item = GradeFeeItem.objects.create(
-             fee_item=activity_fee_item,
-             grade=self.grade1,
-             academic_year=self.academic_year,
-             amount=100,
-             frequency="yearly",
+            fee_item=activity_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=100,
+            frequency="yearly",
         )
 
         student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
@@ -647,11 +648,11 @@ class RecalculateStudentDiscountTests(TestCase):
         )
 
         activity_grade_fee_item = GradeFeeItem.objects.create(
-             fee_item=activity_fee_item,
-             grade=self.grade1,
-             academic_year=self.academic_year,
-             amount=200,
-             frequency="yearly",
+            fee_item=activity_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=200,
+            frequency="yearly",
         )
 
         student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
@@ -690,6 +691,7 @@ class RecalculateStudentDiscountTests(TestCase):
 
         self.assertEqual(student_activity_fee_assignment.discount_amount, 20)
         self.assertEqual(student_activity_fee_assignment.net_amount, 180)
+
 
 class AssignGradeFeeItemToStudentsTest(TestCase):
     def setUp(self):
@@ -750,9 +752,7 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
             password="unsecurePass123",
         )
         student = StudentProfile.objects.create(
-            user=student_user,
-            school=self.school,
-            grade=self.grade1
+            user=student_user, school=self.school, grade=self.grade1
         )
 
         student_user2 = User.objects.create_user(
@@ -762,9 +762,7 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
             password="unsecurePass123",
         )
         student_2 = StudentProfile.objects.create(
-            user=student_user2,
-            school=self.school,
-            grade=self.grade1
+            user=student_user2, school=self.school, grade=self.grade1
         )
 
         student_user3 = User.objects.create_user(
@@ -774,9 +772,7 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
             password="unsecurePass123",
         )
         student_3 = StudentProfile.objects.create(
-            user=student_user3,
-            school=self.school,
-            grade=self.grade1
+            user=student_user3, school=self.school, grade=self.grade1
         )
 
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
@@ -791,49 +787,42 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
 
         self.assertEqual(
             StudentFeeAssignment.objects.filter(
-                student=student,
-                grade_fee_item=grade_fee_item
+                student=student, grade_fee_item=grade_fee_item
             ).count(),
-            0
+            0,
         )
 
         self.assertEqual(
             StudentFeeAssignment.objects.filter(
-                student=student_2,
-                grade_fee_item=grade_fee_item
+                student=student_2, grade_fee_item=grade_fee_item
             ).count(),
-            0
+            0,
         )
 
         self.assertEqual(
             StudentFeeAssignment.objects.filter(
-                student=student_3,
-                grade_fee_item=grade_fee_item
+                student=student_3, grade_fee_item=grade_fee_item
             ).count(),
-            0
+            0,
         )
 
         assign_grade_fee_item_to_students(grade_fee_item)
 
         student_1_assignments = StudentFeeAssignment.objects.filter(
-            student=student,
-            grade_fee_item=grade_fee_item
+            student=student, grade_fee_item=grade_fee_item
         )
 
         student_2_assignments = StudentFeeAssignment.objects.filter(
-            student=student_2,
-            grade_fee_item=grade_fee_item
+            student=student_2, grade_fee_item=grade_fee_item
         )
 
         student_3_assignments = StudentFeeAssignment.objects.filter(
-            student=student_3,
-            grade_fee_item=grade_fee_item
+            student=student_3, grade_fee_item=grade_fee_item
         )
 
-        self.assertEqual(len(student_1_assignments), 3) # For the three terms
-        self.assertEqual(len(student_2_assignments), 3) # For the three terms
-        self.assertEqual(len(student_3_assignments), 3) # For the three terms
-
+        self.assertEqual(len(student_1_assignments), 3)  # For the three terms
+        self.assertEqual(len(student_2_assignments), 3)  # For the three terms
+        self.assertEqual(len(student_3_assignments), 3)  # For the three terms
 
     def test_does_nothing_if_no_students_in_grade(self):
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
@@ -848,16 +837,14 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
 
         assign_grade_fee_item_to_students(grade_fee_item)
 
-
         self.assertEqual(
-            StudentFeeAssignment.objects.filter(
-                grade_fee_item=grade_fee_item
-            ).count(),
-            0
+            StudentFeeAssignment.objects.filter(grade_fee_item=grade_fee_item).count(),
+            0,
         )
 
-
-    def does_not_duplicate_assignments_when_called_more_than_once_with_the_same_grade_fee_item(self):
+    def does_not_duplicate_assignments_when_called_more_than_once_with_the_same_grade_fee_item(
+        self,
+    ):
         student_user = User.objects.create_user(
             first_name="John",
             last_name="Doe",
@@ -865,9 +852,7 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
             password="unsecurePass123",
         )
         student = StudentProfile.objects.create(
-            user=student_user,
-            school=self.school,
-            grade=self.grade1
+            user=student_user, school=self.school, grade=self.grade1
         )
 
         student_user2 = User.objects.create_user(
@@ -877,9 +862,7 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
             password="unsecurePass123",
         )
         student_2 = StudentProfile.objects.create(
-            user=student_user2,
-            school=self.school,
-            grade=self.grade1
+            user=student_user2, school=self.school, grade=self.grade1
         )
 
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
@@ -895,22 +878,20 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
         assign_grade_fee_item_to_students(grade_fee_item)
 
         student_1_assignments = StudentFeeAssignment.objects.filter(
-            student=student,
-            grade_fee_item=grade_fee_item
+            student=student, grade_fee_item=grade_fee_item
         )
 
         student_2_assignments = StudentFeeAssignment.objects.filter(
-            student=student_2,
-            grade_fee_item=grade_fee_item
+            student=student_2, grade_fee_item=grade_fee_item
         )
 
-        self.assertEqual(len(student_1_assignments), 3) # For the three terms
-        self.assertEqual(len(student_2_assignments), 3) # For the three terms
+        self.assertEqual(len(student_1_assignments), 3)  # For the three terms
+        self.assertEqual(len(student_2_assignments), 3)  # For the three terms
 
         assign_grade_fee_item_to_students(grade_fee_item)
 
-        self.assertEqual(len(student_1_assignments), 3) # For the three terms
-        self.assertEqual(len(student_2_assignments), 3) # For the three terms
+        self.assertEqual(len(student_1_assignments), 3)  # For the three terms
+        self.assertEqual(len(student_2_assignments), 3)  # For the three terms
 
 
 class RecordPaymentTests(TestCase):
@@ -984,9 +965,7 @@ class RecordPaymentTests(TestCase):
             password="unsecurePass123",
         )
         student = StudentProfile.objects.create(
-            user=student_user,
-            school=self.school,
-            grade=self.grade1
+            user=student_user, school=self.school, grade=self.grade1
         )
 
         allocations = [
@@ -1004,7 +983,6 @@ class RecordPaymentTests(TestCase):
             },
         ]
 
-
         with self.assertRaises(ValidationError):
             record_payment(
                 student=student,
@@ -1015,7 +993,7 @@ class RecordPaymentTests(TestCase):
                 academic_year=self.academic_year,
                 allocations=allocations,
                 reference="KKLSKDJF",
-                note="Some random note"
+                note="Some random note",
             )
 
     def test_creates_one_payment_item_per_allocation(self):
@@ -1039,9 +1017,7 @@ class RecordPaymentTests(TestCase):
             password="unsecurePass123",
         )
         student = StudentProfile.objects.create(
-            user=student_user,
-            school=self.school,
-            grade=self.grade1
+            user=student_user, school=self.school, grade=self.grade1
         )
 
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
@@ -1057,11 +1033,11 @@ class RecordPaymentTests(TestCase):
         )
 
         activity_grade_fee_item = GradeFeeItem.objects.create(
-             fee_item=activity_fee_item,
-             grade=self.grade1,
-             academic_year=self.academic_year,
-             amount=200,
-             frequency="yearly",
+            fee_item=activity_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=200,
+            frequency="yearly",
         )
 
         student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
@@ -1084,7 +1060,6 @@ class RecordPaymentTests(TestCase):
             net_amount=activity_grade_fee_item.amount,
         )
 
-
         allocations = [
             {
                 "fee_assignment_id": 1,
@@ -1105,13 +1080,10 @@ class RecordPaymentTests(TestCase):
             academic_year=self.academic_year,
             allocations=allocations,
             reference="KKLSKDJF",
-            note="Some random note"
+            note="Some random note",
         )
 
-        self.assertEqual(
-            len(payments),
-            2
-        )
+        self.assertEqual(len(payments), 2)
 
     def test_associated_payment_items_created(self):
         admin_user = User.objects.create_user(
@@ -1134,9 +1106,7 @@ class RecordPaymentTests(TestCase):
             password="unsecurePass123",
         )
         student = StudentProfile.objects.create(
-            user=student_user,
-            school=self.school,
-            grade=self.grade1
+            user=student_user, school=self.school, grade=self.grade1
         )
 
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
@@ -1152,11 +1122,11 @@ class RecordPaymentTests(TestCase):
         )
 
         activity_grade_fee_item = GradeFeeItem.objects.create(
-             fee_item=activity_fee_item,
-             grade=self.grade1,
-             academic_year=self.academic_year,
-             amount=200,
-             frequency="yearly",
+            fee_item=activity_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=200,
+            frequency="yearly",
         )
 
         student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
@@ -1199,13 +1169,10 @@ class RecordPaymentTests(TestCase):
             academic_year=self.academic_year,
             allocations=allocations,
             reference="KKLSKDJF",
-            note="Some random note"
+            note="Some random note",
         )
 
-        self.assertEqual(
-            PaymentItem.objects.all().count(),
-            2
-        )
+        self.assertEqual(PaymentItem.objects.all().count(), 2)
 
     def test_payment_items_have_the_right_amount(self):
         admin_user = User.objects.create_user(
@@ -1228,9 +1195,7 @@ class RecordPaymentTests(TestCase):
             password="unsecurePass123",
         )
         student = StudentProfile.objects.create(
-            user=student_user,
-            school=self.school,
-            grade=self.grade1
+            user=student_user, school=self.school, grade=self.grade1
         )
 
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
@@ -1246,11 +1211,11 @@ class RecordPaymentTests(TestCase):
         )
 
         activity_grade_fee_item = GradeFeeItem.objects.create(
-             fee_item=activity_fee_item,
-             grade=self.grade1,
-             academic_year=self.academic_year,
-             amount=200,
-             frequency="yearly",
+            fee_item=activity_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=200,
+            frequency="yearly",
         )
 
         student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
@@ -1293,9 +1258,8 @@ class RecordPaymentTests(TestCase):
             academic_year=self.academic_year,
             allocations=allocations,
             reference="KKLSKDJF",
-            note="Some random note"
+            note="Some random note",
         )
-
 
         first_payment_item = PaymentItem.objects.get(pk=1)
         second_payment_item = PaymentItem.objects.get(pk=2)
@@ -1327,9 +1291,7 @@ class RecordPaymentTests(TestCase):
             password="unsecurePass123",
         )
         student = StudentProfile.objects.create(
-            user=student_user,
-            school=self.school,
-            grade=self.grade1
+            user=student_user, school=self.school, grade=self.grade1
         )
 
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
@@ -1345,11 +1307,11 @@ class RecordPaymentTests(TestCase):
         )
 
         activity_grade_fee_item = GradeFeeItem.objects.create(
-             fee_item=activity_fee_item,
-             grade=self.grade1,
-             academic_year=self.academic_year,
-             amount=200,
-             frequency="yearly",
+            fee_item=activity_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=200,
+            frequency="yearly",
         )
 
         student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
@@ -1392,16 +1354,14 @@ class RecordPaymentTests(TestCase):
             academic_year=self.academic_year,
             allocations=allocations,
             reference="KKLSKDJF",
-            note="Some random note"
+            note="Some random note",
         )
-
 
         first_payment_item = PaymentItem.objects.get(pk=1)
         second_payment_item = PaymentItem.objects.get(pk=2)
 
         self.assertEqual(first_payment_item.amount, 300)
         self.assertEqual(second_payment_item.amount, 100)
-
 
     def test_payment_items_have_correct_allocated_amounts(self):
         pass
@@ -1490,9 +1450,7 @@ class TestStudentFeeAssignment(TestCase):
             password="unsecurePass123",
         )
         student = StudentProfile.objects.create(
-            user=student_user,
-            school=self.school,
-            grade=self.grade1
+            user=student_user, school=self.school, grade=self.grade1
         )
 
         tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
@@ -1508,11 +1466,11 @@ class TestStudentFeeAssignment(TestCase):
         )
 
         activity_grade_fee_item = GradeFeeItem.objects.create(
-             fee_item=activity_fee_item,
-             grade=self.grade1,
-             academic_year=self.academic_year,
-             amount=200,
-             frequency="yearly",
+            fee_item=activity_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=200,
+            frequency="yearly",
         )
 
         student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
@@ -1555,10 +1513,189 @@ class TestStudentFeeAssignment(TestCase):
             academic_year=self.academic_year,
             allocations=allocations,
             reference="KKLSKDJF",
-            note="Some random note"
+            note="Some random note",
         )
 
         # Make a payment
 
         self.assertEqual(student_tuition_fee_assignment.balance, 200)
         self.assertEqual(student_activity_fee_assignment.balance, 150)
+
+
+class StudentFeeSummaryTest(TestCase):
+    def setUp(self):
+        current_year = timezone.now().year
+
+        term_1_start_date = timezone.datetime(current_year, 1, 1)
+        term_1_end_date = timezone.datetime(current_year, 4, 1)
+
+        term_2_start_date = timezone.datetime(current_year, 5, 1)
+        term_2_end_date = timezone.datetime(current_year, 7, 1)
+
+        term_3_start_date = timezone.datetime(current_year, 9, 1)
+        term_3_end_date = timezone.datetime(current_year, 11, 1)
+
+        self.school = School.objects.create(
+            name="Acme School",
+            year_started=timezone.datetime(current_year, 1, 1).date(),
+        )
+        self.academic_year = AcademicYear.objects.create(
+            school=self.school,
+            name="2026-2027",
+            start_date=timezone.datetime(current_year, 1, 1).date(),
+            end_date=timezone.datetime(current_year + 1, 1, 1).date(),
+        )
+        self.term1 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 1",
+            order=1,
+            start_date=term_1_start_date,
+            end_date=term_1_end_date,
+        )
+        self.term2 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 2",
+            order=2,
+            start_date=term_2_start_date,
+            end_date=term_2_end_date,
+        )
+        self.term3 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 3",
+            order=3,
+            start_date=term_3_start_date,
+            end_date=term_3_end_date,
+        )
+        self.grade1 = Grade.objects.create(school=self.school, name="Grade1")
+
+        admin_user = User.objects.create_user(
+            first_name="Admin",
+            last_name="Doe",
+            phone_number="0798282343",
+            password="unsecurePass123",
+        )
+
+        admin = AdminProfile.objects.create(
+            user=admin_user,
+        )
+
+        admin.schools.add(self.school)
+
+        student_user = User.objects.create_user(
+            first_name="John",
+            last_name="Doe",
+            phone_number="0711111111",
+            password="unsecurePass123",
+        )
+        self.student = StudentProfile.objects.create(
+            user=student_user,
+            school=self.school,
+            grade=self.grade1,
+            assessment_number="002233",
+        )
+
+        tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
+
+        activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
+
+        tuition_grade_fee_item = GradeFeeItem.objects.create(
+            fee_item=tuition_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=400,
+            frequency="per_term",
+        )
+
+        activity_grade_fee_item = GradeFeeItem.objects.create(
+            fee_item=activity_fee_item,
+            grade=self.grade1,
+            academic_year=self.academic_year,
+            amount=200,
+            frequency="yearly",
+        )
+
+        student_tuition_fee_assignment = StudentFeeAssignment.objects.create(
+            student=self.student,
+            grade_fee_item=tuition_grade_fee_item,
+            term=self.term1,
+            academic_year=self.academic_year,
+            gross_amount=tuition_grade_fee_item.amount,
+            discount_amount=0,
+            net_amount=tuition_grade_fee_item.amount,
+        )
+
+        student_activity_fee_assignment = StudentFeeAssignment.objects.create(
+            student=self.student,
+            grade_fee_item=activity_grade_fee_item,
+            term=self.term1,
+            academic_year=self.academic_year,
+            gross_amount=activity_grade_fee_item.amount,
+            discount_amount=0,
+            net_amount=activity_grade_fee_item.amount,
+        )
+
+        allocations = [
+            {
+                "fee_assignment_id": 1,
+                "amount": 200,
+            },
+            {
+                "fee_assignment_id": 2,
+                "amount": 50,
+            },
+        ]
+
+        payments = record_payment(
+            student=self.student,
+            amount=250,
+            payment_method="M-pesa",
+            received_by=admin_user,
+            term=self.term1,
+            academic_year=self.academic_year,
+            allocations=allocations,
+            reference="KKLSKDJF",
+            note="Some random note",
+        )
+
+    def test_correct_summary(self):
+        fee_summary = get_student_fee_summary(
+            self.student,
+            self.academic_year,
+        )
+
+        student_details = fee_summary.get("student", None)
+        academic_period = fee_summary.get("academic_period", None)
+        summary = fee_summary.get("summary", None)
+
+        self.assertEqual(
+            student_details,
+            {
+                "user_id": 2,
+                "student_name": "John Doe",
+                "grade": "grade1",
+                "stream": "",
+                "admission_number": "",
+                "assessment_number": "002233",
+            },
+        )
+        self.assertEqual(
+            academic_period,
+            {
+                "academic_year": "2026-2027",
+            },
+        )
+        # Test arrears and credit separately
+        self.assertEqual(
+            summary,
+            {
+                "total_fees_due": 600,
+                "previously_paid": 250,
+                "discounts_applied": 0,
+                "outstanding_balance": 350,
+                "arrears_balance": 0,
+                "credit_balance": 0,
+            },
+        )

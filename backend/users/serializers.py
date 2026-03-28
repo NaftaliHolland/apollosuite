@@ -190,11 +190,12 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         ]
 
 class StudentSummarySerializer(serializers.Serializer):
-    id = serializers.CharField(source="user.id")
-    name = serializers.CharField(source="user.get_full_name")
+    user_id = serializers.CharField(source="user.id")
+    student_name = serializers.CharField(source="user.get_full_name")
     admission_number = serializers.CharField()
     assessment_number = serializers.CharField()
-
+    grade_name = serializers.CharField(source="grade.name", default="")
+    stream_name = serializers.CharField(source="stream.name", default="")
 
 class StudentProfileListSerializer(serializers.ModelSerializer):
     """Lighter serializer for list views"""
