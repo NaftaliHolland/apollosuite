@@ -1,6 +1,7 @@
+from core.models import School
 from core.permissions import IsMemberOfSchool
 from django.contrib.auth import authenticate, get_user_model
-from finance.services import assign_fees_to_student
+from finance.services import assign_fees_to_student, get_student_fee_summary
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -12,14 +13,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import PROFILE_ROLES, StudentProfile
-from .serializers import (
-    RegisterSerializer,
-    StudentProfileCreateSerializer,
-    StudentProfileListSerializer,
-    StudentProfileSerializer,
-    StudentSummarySerializer,
-    UserSerializer
-)
+from .serializers import (RegisterSerializer, StudentProfileCreateSerializer,
+                          StudentProfileListSerializer,
+                          StudentProfileSerializer, StudentSummarySerializer,
+                          UserSerializer)
 
 User = get_user_model()
 
@@ -170,4 +167,12 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"], url_path="fee-summary")
     def fee_summary(self, request, pk=None, *args, **kwargs):
-        return Response("Nigga please")
+        student = self.get_object()
+
+        school_id = self.kwargs.get("school_pk") or self.kwargs.get("school_id")
+        school = School.objects.get(pk=school_id)
+        academic_year = school.current_academic_year
+
+        fee_summary = get_student_fee_summary(student, academic_year)
+
+        return Response(fee_summary)
