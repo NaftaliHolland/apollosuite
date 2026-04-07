@@ -75,8 +75,9 @@ export function GradeFeeAssignmentForm({ handleClose, selectedFeeItem }: GradeFe
 		defaultValues: {
 			fee_item: selectedFeeItem?.toString(),
 			grade: "",
-			amount: undefined,
+			amount: 0,
 			frequency: "",
+			terms: [],
 		}
 	})
 

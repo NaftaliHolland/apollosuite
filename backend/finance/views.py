@@ -69,34 +69,19 @@ class GradeFeeItemViewSet(ModelViewSet):
 
             return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
+        else:
+            grade_fee_item = serializer.save()
+
+            grade = serializer.validated_data.get("grade")
+            academic_year =serializer.validated_data.get("academic_year")
+
+            assign_grade_fee_item_to_students(grade, academic_year)
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+
         return super().create(request, *args, **kwargs)
-
-   # def perform_create(self, serializer):
-
-   #     if self.request.data.get("frequency", None) == "per_term":
-   #         create_grade_fee_items_per_term(serializer.validated_data)
-
-   #         serializer.instance = serializer.validated_data
-
-   #         #output_serializer = GradeFeeItemSerializer(instances, many=True)
-
-   #         #return Response(output_serializer.data)
-   #     else:
-   #         grade_fee_item = serializer.save()
-
-   #         grade = grade_fee_item.grade
-   #         academic_year = grade_fee_item.academic_year
-
-   #         assign_grade_fee_item_to_students(grade, academic_year)
-
-    #@action(detail=False, methods=["post"], url_path="create-per-term")
-    #def create_per_term(self, request, *args, **kwargs):
-    #    serializer = GradeFeeItemPerTermSerializer(data=request.data)
-    #    serializer.is_valid(raise_exception=True)
-
-    #    instances = create_grade_fee_items_per_term(serializer.validated_data)
-
-    #    output_serializer = GradeFeeItemSerializer(instances, many=True)
 
 class DiscountViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsMemberOfSchool]
@@ -119,9 +104,6 @@ class StudentDiscountViewSet(ModelViewSet):
 
     def get_queryset(self):
         school_id = self.kwargs["school_pk"]
-
-        # Just get the school
-        # school = School.objects.get(pk=school_id)
 
         return StudentDiscount.objects.filter(discount__school_id=school_id)
 
