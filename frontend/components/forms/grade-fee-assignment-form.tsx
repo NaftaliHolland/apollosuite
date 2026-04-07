@@ -14,9 +14,15 @@ import {
 	FieldLabel,
 	FieldError,
 } from "@/components/ui/field";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { LoaderCircle } from "lucide-react";
+
+const TermSchema = z.object({
+	term: z.number(),
+	amount: z.number(),
+});
 
 const formSchema = z.object(
 	{
@@ -25,18 +31,25 @@ const formSchema = z.object(
 		grade: z
 			.string("Grade is required"),
 		amount: z
-			.coerce
-			.number()
-			.positive()
+			.string()
 			.min(1, "Amount cannot be less than 1")
-			.max(100000000, "Maximum amount is 10,000,000"),
+			.max(100000000, "Maximum amount is 10,000,000")
+		,
 		frequency: z
-			.enum(["per_term", "yearly", "one_time"])
+			.enum(["per_term", "yearly", "one_time", ""]),
+		terms: z.array(TermSchema),
 	}
 )
 
-type FormInput = z.input<typeof formSchema>;
-type FormOutput = z.infer<typeof formSchema>;
+
+export const FeeSchema = z.object({
+	academic_year: z.number(),
+	fee_item: z.number(),
+	grade: z.number(),
+});
+
+//type FormInput = z.input<typeof formSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 interface GradeFeeAssignmentFormProps {
 	handleClose: () => void;
@@ -57,19 +70,19 @@ export function GradeFeeAssignmentForm({ handleClose, selectedFeeItem }: GradeFe
 		}
 	});
 
-	const form = useForm<FormInput, any, FormOutput>({
+	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			fee_item: selectedFeeItem?.toString(),
 			grade: "",
-			amount: 0,
-			frequency: "per_term",
+			amount: undefined,
+			frequency: "",
 		}
 	})
 
 	const assignFeeMutation = useMutation(
 		{
-			mutationFn: async (data: FormOutput) => {
+			mutationFn: async (data: FormValues) => {
 				const response = await api.post(`schools/${school.school_id}/finance/grade-fee-items/`, data)
 
 				return response.data
@@ -85,9 +98,13 @@ export function GradeFeeAssignmentForm({ handleClose, selectedFeeItem }: GradeFe
 		}
 	)
 
-	function onSubmit(data: FormOutput) {
+	function onSubmit(data: FormValues) {
 		assignFeeMutation.mutate(data)
 	}
+
+	const frequency = form.watch("frequency");
+
+	const terms = ["Term 1", "Term 2", "Term 3", "Term 4"];
 
 	return (
 		<form onSubmit={form.handleSubmit(onSubmit)}>
@@ -137,25 +154,6 @@ export function GradeFeeAssignmentForm({ handleClose, selectedFeeItem }: GradeFe
 				/>
 
 				<Controller
-					name="amount"
-					control={form.control}
-					render={({ field, fieldState }) => (
-						<Field data-invalid={fieldState.invalid}>
-							<FieldLabel htmlFor="amount">Amount</FieldLabel>
-							<Input
-								{...field}
-								id="amount"
-								type="number"
-								required
-							/>
-							{fieldState.invalid && (
-								<FieldError errors={[fieldState.error]} />
-							)}
-						</Field>
-					)}
-				/>
-
-				<Controller
 					name="frequency"
 					control={form.control}
 					render={({ field, fieldState }) => (
@@ -192,6 +190,44 @@ export function GradeFeeAssignmentForm({ handleClose, selectedFeeItem }: GradeFe
 						</Field>
 					)}
 				/>
+
+				{(frequency == "one_time" || frequency == "yearly") && <Controller
+					name="amount"
+					control={form.control}
+					render={({ field, fieldState }) => (
+						<Field data-invalid={fieldState.invalid}>
+							<FieldLabel htmlFor="amount">Amount</FieldLabel>
+							<Input
+								{...field}
+								id="amount"
+								type="number"
+								required
+							/>
+							{fieldState.invalid && (
+								<FieldError errors={[fieldState.error]} />
+							)}
+						</Field>
+					)}
+				/>}
+				{frequency == "per_term" &&
+					<div className="flex flex-col gap-3">
+						{terms.map((term) => (
+							<div
+								key={term}
+								className="flex items-center rounded-md border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring"
+							>
+								<Label className="px-3 py-2 bg-muted text-muted-foreground text-sm font-mono border-r border-input min-w-[90px]">
+									{term}
+								</Label>
+								<Input
+									type="number"
+									placeholder="0.00"
+									className="border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
+								/>
+							</div>
+						))}
+					</div>
+				}
 
 				<div className="flex justify-end gap-4">
 					<Button

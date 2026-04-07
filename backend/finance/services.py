@@ -3,10 +3,10 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.db.models import DecimalField, F, Sum
 from django.db.models.functions import Coalesce
+from users.models import StudentProfile
+
 from finance.models import (Discount, FeeItem, GradeFeeItem, Payment,
                             PaymentItem, StudentDiscount, StudentFeeAssignment)
-
-from users.models import StudentProfile
 
 
 def assign_fees_to_student(student, academic_year):
@@ -28,7 +28,7 @@ def assign_fees_to_student(student, academic_year):
     grade = student.grade
     terms = academic_year.terms.all()
 
-    # TODO: make this query a bit more efficient
+    # TODO: make this query a more efficient
     grade_fee_items = GradeFeeItem.objects.filter(
         grade=grade, academic_year=academic_year
     ).all()
@@ -36,6 +36,8 @@ def assign_fees_to_student(student, academic_year):
     assignments = []
 
     for grade_fee_item in grade_fee_items:
+        # So this should change, I will create one grade fee item per term
+
         if grade_fee_item.frequency == "per_term":
             for term in terms:
                 assignment, _ = StudentFeeAssignment.objects.get_or_create(
@@ -52,11 +54,13 @@ def assign_fees_to_student(student, academic_year):
                 assignments.append(assignment)
 
         elif grade_fee_item.frequency == "yearly":
-            first_term = academic_year.terms.all().first()
+            # TODO: This is a potential bug, maye the first() is not term 1 and should I really have yearly in term one? I don't think so
+
+            #first_term = academic_year.terms.all().first()
             assignment, _ = StudentFeeAssignment.objects.get_or_create(
                 student=student,
                 grade_fee_item=grade_fee_item,
-                term=first_term,
+                #term=first_term,
                 defaults={
                     "gross_amount": grade_fee_item.amount,
                     "net_amount": grade_fee_item.amount,
@@ -190,22 +194,23 @@ def recalculate_student_discounts(student, academic_year):
             student_fee_assignment.save()
 
 
-@transaction.atomic
-def assign_grade_fee_item_to_students(grade_fee_item):
+def assign_grade_fee_item_to_students(grade, academic_year):
     """
     Triggered when a new GradeFeeItem is created
     """
-    grade = grade_fee_item.grade
+    #grade = grade_fee_item.grade
     students = grade.students.all()
 
     if not students:
         return
 
-    school = grade_fee_item.grade.school
-    academic_year = grade_fee_item.academic_year
+    #school = grade_fee_item.grade.school
+    school = grade.school
+    #academic_year = grade_fee_item.academic_year
 
-    for student in students:
-        assign_fees_to_student(student, academic_year)
+    with transaction.atomic():
+        for student in students:
+            assign_fees_to_student(student, academic_year)
 
     ##NOTE: Only active students????
     # student_fee_assignments = []
@@ -388,3 +393,22 @@ def get_student_fee_summary(
     fee_summary["fee_assignments"] = fee_assignments
 
     return fee_summary
+
+def create_grade_fee_items_per_term(validated_data):
+    terms_data = validated_data.pop("terms")
+    grade = validated_data["grade"]
+    academic_year = validated_data["academic_year"]
+
+    objects_to_create = [
+        GradeFeeItem(
+            term=term_data["term"],
+            amount=term_data["amount"],
+            **validated_data
+        ) for term_data in terms_data
+    ]
+
+    with transaction.atomic():
+        created = GradeFeeItem.objects.bulk_create(objects_to_create)
+
+    assign_grade_fee_item_to_students(grade, academic_year)
+    return created

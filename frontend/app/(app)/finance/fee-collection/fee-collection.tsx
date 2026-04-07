@@ -41,15 +41,25 @@ export function FeeCollection() {
 	const [query, setQuery] = useState("");
 	const [selectedStudent, setSelectedStudent] = useState<Partial<Student> | undefined>(undefined);
 
-	const studentQuery = useQuery({
+	//const studentQuery = useQuery({
+	//	queryKey: ["students", selectedStudent?.user_id],
+	//	queryFn: async (): Promise<Partial<Student>> => {
+	//		const response = await api.get(`/schools/${school.school_id}/students/${selectedStudent?.user_id}/`)
+
+	//		return response.data;
+	//	},
+	//	enabled: !!selectedStudent,
+	//});
+
+	const studentFeeSummaryQuery = useQuery({
 		queryKey: ["students", selectedStudent?.user_id],
-		queryFn: async (): Promise<Partial<Student>[]> => {
-			const response = await api.get(`/schools/${school.school_id}/students/${selectedStudent?.user_id}/`)
+		// Write this type
+		queryFn: async (): Promise<any> => {
+			const response = await api.get(`/schools/${school.school_id}/students/${selectedStudent?.user_id}/fee-summary/`)
 
 			return response.data;
 		},
 		enabled: !!selectedStudent,
-
 	});
 
 
@@ -135,26 +145,26 @@ export function FeeCollection() {
 					}
 				</div>
 
-				{studentQuery.isLoading &&
+				{studentFeeSummaryQuery.isLoading &&
 					<LoaderCircle className="animate-spin mx-auto" />
 				}
-				{studentQuery.error &&
-					<p className="text-red-500">{studentQuery.error.message}</p>
+				{studentFeeSummaryQuery.error &&
+					<p className="text-red-500">{studentFeeSummaryQuery.error.message}</p>
 				}
-				{studentQuery.data &&
+				{studentFeeSummaryQuery.data &&
 					<div className="flex justify-between">
 						<div>
 							<div className="flex items-center gap-5 mb-1">
-								<h3 className="text-xl font-semibold text-slate-800">Benjamin Harrison</h3>
-								<Badge variant="outline" className="rounded-sm">Grade 10 - Blue</Badge>
+								<h3 className="text-xl font-semibold text-slate-800">{studentFeeSummaryQuery.data.student.student_name}</h3>
+								<Badge variant="outline" className="rounded-sm">{studentFeeSummaryQuery.data.student.grade}{studentFeeSummaryQuery.data.student.stream ? `-${studentFeeSummaryQuery.data.student.stream}` : ""}</Badge>
 							</div>
-							<p className="text-slate-500 font-medium">Student ID:<span className="font-normal"> #STU-2024-00892</span></p>
-							<p className="text-slate-500 font-medium">Assessment No: <span className="font-normal">#STU-2024-00892</span></p>
+							<p className="text-slate-500 font-medium">Student ID: <span className="font-normal">#{studentFeeSummaryQuery.data.student.admission_number}</span></p>
+							{studentFeeSummaryQuery.data.student.assessment_number && <p className="text-slate-500 font-medium">Assessment No: <span className="font-normal">#{studentFeeSummaryQuery.data.student.assessment_number}</span></p>}
 						</div>
 
 						<div className="bg-primary  rounded-sm px-8 py-4 flex flex-col items-center justify-center relative z-10 min-w-[200px] shadow-lg shadow-primary/20">
 							<p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Outstanding Balance</p>
-							<p className="text-4xl font-extrabold tracking-tighter">$2,450.00</p>
+							<p className="text-4xl font-extrabold tracking-tighter"><span className="text-xl">KSHS:</span> {Intl.NumberFormat("en", { minimumFractionDigits: 2 }).format(studentFeeSummaryQuery.data.summary.total_fees_due)}</p>
 						</div>
 
 					</div>

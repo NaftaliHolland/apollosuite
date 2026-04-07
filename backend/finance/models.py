@@ -2,6 +2,7 @@ from core.models import AcademicYear, Grade, School, Term
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from users.models import TenantManager
 
 User = get_user_model()
@@ -31,13 +32,29 @@ class GradeFeeItem(models.Model):
     ]
     fee_item = models.ForeignKey(FeeItem, on_delete=models.PROTECT, related_name="classes")
     grade = models.ForeignKey(Grade, on_delete=models.PROTECT, related_name="class_fee_items")
+    # term set to NULL if the items frequency is ONCE e.g admission.
+    term = models.ForeignKey(
+        Term,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="grade_fee_item"
+    )
     academic_year = models.ForeignKey(AcademicYear, on_delete=models.PROTECT, related_name="class_fee_items")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     frequency = models.CharField(choices=FEE_FREQUENCY_CHOICES)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['academic_year', 'fee_item', 'grade'], name="unique_grade_fee_item")
+            models.UniqueConstraint(
+                fields=['academic_year', 'fee_item', 'grade', 'term'],
+                condition=Q(term__isnull=False),
+                name="unique_grade_fee_item_with_term"),
+
+            models.UniqueConstraint(
+                fields=['academic_year', 'fee_item', 'grade'],
+                condition=Q(term__isnull=True),
+                name="unique_grade_fee_item_when_term_is_null"),
         ]
 
     def __str__(self):

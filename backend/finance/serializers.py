@@ -1,4 +1,4 @@
-from core.models import AcademicYear, Term
+from core.models import AcademicYear, Grade, Term
 from core.serializers import CurrentAcademicYearDefault, CurrentSchoolDefault
 from rest_framework import serializers
 from users.models import StudentProfile
@@ -33,6 +33,17 @@ class FeeItemCreateSerializer(serializers.ModelSerializer):
             'is_active',
         ]
         read_only_fields = ['id']
+
+class TermAmountSerializer(serializers.Serializer):
+    term = serializers.PrimaryKeyRelatedField(queryset=Term.objects.all())
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+class GradeFeeItemPerTermSerializer(serializers.Serializer):
+    academic_year = serializers.CharField(default=CurrentAcademicYearDefault())
+    #academic_year = serializers.PrimaryKeyRelatedField(queryset=AcademicYear.objects.all())
+    fee_item = serializers.PrimaryKeyRelatedField(queryset=FeeItem.objects.all())
+    grade = serializers.PrimaryKeyRelatedField(queryset=Grade.objects.all())
+    terms = TermAmountSerializer(many=True)
 
 class GradeFeeItemSerializer(serializers.ModelSerializer):
     academic_year = serializers.CharField(default=CurrentAcademicYearDefault())

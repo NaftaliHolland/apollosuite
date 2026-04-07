@@ -13,6 +13,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog"
+import { Plus } from "lucide-react";
+import { TermForm } from "@/components/forms/term-form";
 import { AcademicYearForm } from "@/components/forms/academic-year-form";
 
 
@@ -37,9 +39,10 @@ export function AcademicYears() {
 	})
 
 	const [addYearOpen, setAddYearOpen] = useState(false);
+	const [addTermOpen, setAddTermOpen] = useState(false);
 
 	const termsQuery = useQuery({
-		queryKey: [selectedYear, "terms"],
+		queryKey: [selectedYear?.id, "terms"],
 		queryFn: async (): Promise<Term[]> => {
 			const response = await api.get(`/schools/${school.school_id}/academic-years/${selectedYear?.id}/terms/`)
 
@@ -120,19 +123,37 @@ export function AcademicYears() {
 								{termsQuery.isLoading &&
 									<p>Loading ...</p>
 								}
-								{termsQuery.data && (
-									<div className="flex gap-4">
-										{termsQuery.data.map((term, index) =>
+								<div className="flex gap-4">
+									{termsQuery.data && (
+										termsQuery.data.map((term, index) =>
 										(
 											<div key={index} className="border rounded-sm py-2 px-4">
 												<p className="text-md text-gray-700">{term.name}</p>
 											</div>
 										)
-										)}
-									</div>
-								)}
+										)
+									)}
+									<Dialog open={addTermOpen} onOpenChange={setAddTermOpen}>
+										<DialogTrigger asChild>
+											<Button variant="outline" className="border border-dashed py-4 px-4 rounded-sm h-full">
+												<Plus />
+											</Button>
+										</DialogTrigger>
+										<DialogContent>
+											<DialogHeader>
+												<DialogTitle>Add New Term</DialogTitle>
+												<DialogDescription className="sr-only">
+													Add Term
+												</DialogDescription>
+											</DialogHeader>
+											<TermForm
+												handleClose={() => setAddTermOpen(false)}
+												academicYearId={selectedYear?.id}
+											/>
+										</DialogContent>
+									</Dialog>
+								</div>
 							</div>
-
 						</div>
 					</div>
 				</>

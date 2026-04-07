@@ -5,16 +5,92 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
+from users.models import AdminProfile, StudentProfile
+
 from finance.models import (Discount, FeeItem, GradeFeeItem, Payment,
                             PaymentItem, StudentDiscount, StudentFeeAssignment)
 from finance.services import (assign_fees_to_student,
                               assign_grade_fee_item_to_students,
+                              create_grade_fee_items_per_term,
                               get_student_fee_summary,
                               recalculate_student_discounts, record_payment)
 
-from users.models import AdminProfile, StudentProfile
-
 User = get_user_model()
+
+class CreateGradeFeeItemPerTerm(TestCase):
+    def setUp(self):
+        current_year = timezone.now().year
+
+        term_1_start_date = timezone.datetime(current_year, 1, 1)
+        term_1_end_date = timezone.datetime(current_year, 4, 1)
+
+        term_2_start_date = timezone.datetime(current_year, 5, 1)
+        term_2_end_date = timezone.datetime(current_year, 7, 1)
+
+        term_3_start_date = timezone.datetime(current_year, 9, 1)
+        term_3_end_date = timezone.datetime(current_year, 11, 1)
+
+        self.school = School.objects.create(
+            name="Acme School",
+            year_started=timezone.datetime(current_year, 1, 1).date(),
+        )
+        self.academic_year = AcademicYear.objects.create(
+            school=self.school,
+            name="2026-2027",
+            start_date=timezone.datetime(current_year, 1, 1).date(),
+            end_date=timezone.datetime(current_year + 1, 1, 1).date(),
+        )
+        self.term1 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 1",
+            order=1,
+            start_date=term_1_start_date,
+            end_date=term_1_end_date,
+        )
+        self.term2 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 2",
+            order=2,
+            start_date=term_2_start_date,
+            end_date=term_2_end_date,
+        )
+        self.term3 = Term.objects.create(
+            school=self.school,
+            academic_year=self.academic_year,
+            name="Term 3",
+            order=3,
+            start_date=term_3_start_date,
+            end_date=term_3_end_date,
+        )
+        self.grade1 = Grade.objects.create(school=self.school, name="Grade1")
+
+        self.tuition_fee_item = FeeItem.objects.create(school=self.school, name="Tuition")
+
+
+    def test_creates_multiple_items(self):
+        validated_data = {
+            "academic_year": self.academic_year,
+            "fee_item": self.tuition_fee_item,
+            "grade": self.grade1,
+            "terms": [
+                {"term": self.term1, "amount": Decimal("500.00")},
+                {"term": self.term2, "amount": Decimal("700.00")}
+            ]
+        }
+
+        instances = create_grade_fee_items_per_term(validated_data)
+
+
+        self.assertEqual(len(instances), 2)
+        self.assertEqual(GradeFeeItem.objects.count(), 2)
+
+        self.assertEqual(instances[0].term, self.term1)
+        self.assertEqual(instances[0].amount, Decimal("500.00"))
+
+        self.assertEqual(instances[1].term, self.term2)
+        self.assertEqual(instances[1].amount, Decimal("700.00"))
 
 
 class AssignFeeToStudentTest(TestCase):
@@ -95,7 +171,7 @@ class AssignFeeToStudentTest(TestCase):
             StudentFeeAssignment.objects.filter(student=self.student).count(), 3
         )
 
-    def test_yearly_creates_one_in_first_term(self):
+    def test_yearly_creates_one_instance(self):
         activity_fee_item = FeeItem.objects.create(school=self.school, name="Activity")
 
         grade_fee_item = GradeFeeItem.objects.create(
@@ -110,10 +186,10 @@ class AssignFeeToStudentTest(TestCase):
 
         self.assertEqual(len(created), 1)
         assignment = StudentFeeAssignment.objects.get(
-            student=self.student, grade_fee_item=grade_fee_item, term=self.term1
+            student=self.student, grade_fee_item=grade_fee_item
         )
 
-        self.assertEqual(assignment.term, self.term1)
+        self.assertIsNone(assignment.term)
 
     def test_once_creates_one_with_no_term(self):
         admission_fee_item = FeeItem.objects.create(
@@ -798,7 +874,7 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
             0,
         )
 
-        assign_grade_fee_item_to_students(grade_fee_item)
+        assign_grade_fee_item_to_students(self.grade1, self.academic_year)
 
         student_1_assignments = StudentFeeAssignment.objects.filter(
             student=student, grade_fee_item=grade_fee_item
@@ -827,7 +903,7 @@ class AssignGradeFeeItemToStudentsTest(TestCase):
             frequency="per_term",
         )
 
-        assign_grade_fee_item_to_students(grade_fee_item)
+        assign_grade_fee_item_to_students(self.grade1, self.academic_year)
 
         self.assertEqual(
             StudentFeeAssignment.objects.filter(grade_fee_item=grade_fee_item).count(),
