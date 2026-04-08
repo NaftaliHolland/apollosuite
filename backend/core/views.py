@@ -97,6 +97,15 @@ class TermViewSet(viewsets.ModelViewSet):
                 academic_year=academic_year_id
             )
 
+        active_academic_year_terms = self.request.query_params.get("active_academic_year", None)
+
+        if active_academic_year_terms:
+            school = School.objects.get(pk=school_id)
+            academic_year = school.current_academic_year
+            return Term.objects.filter(
+                academic_year=academic_year
+            )
+
         return Term.objects.filter(
             academic_year__school_id=school_id,
         )

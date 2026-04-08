@@ -1,9 +1,10 @@
 "use client"
 
 import * as z from "zod";
-import { LocalStorageSchool, Grade } from "@/types";
+import { LocalStorageSchool, Grade, Term } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/lib/api";
+import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -74,11 +75,35 @@ export function GradeFeeAssignmentForm({ handleClose, selectedFeeItem }: GradeFe
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			fee_item: selectedFeeItem?.toString(),
-			grade: "",
-			amount: 0,
+			//grade: "",
+			amount: "0",
 			frequency: "",
 			terms: [],
 		}
+	})
+
+	const frequency = form.watch("frequency");
+
+	useEffect(() => {
+		if (frequency === "per_term" && termsQuery.data) {
+			const initializedTerms = termsQuery.data.map((term) => ({
+				term: term.id,
+				amount: 0,
+			}));
+			form.setValue("terms", initializedTerms);
+		} else {
+			form.setValue("terms", []);
+		}
+	}, [frequency]);
+
+	const termsQuery = useQuery({
+		queryKey: ["terms"],
+		queryFn: async (): Promise<Term[]> => {
+			const response = await api.get(`/schools/${school.school_id}/terms/?active_academic_year=true`)
+
+			return response.data;
+		},
+		//enabled: frequency === "per_term",
 	})
 
 	const assignFeeMutation = useMutation(
@@ -103,9 +128,18 @@ export function GradeFeeAssignmentForm({ handleClose, selectedFeeItem }: GradeFe
 		assignFeeMutation.mutate(data)
 	}
 
-	const frequency = form.watch("frequency");
 
-	const terms = ["Term 1", "Term 2", "Term 3", "Term 4"];
+	const handleTermAmountChange = (termId: number, value: string) => {
+		const currentTerms = form.getValues("terms");
+
+		const updatedTerms = currentTerms.map((term) =>
+			term.term === termId
+				? { ...term, amount: Number(value) || 0 }
+				: term
+		);
+
+		form.setValue("terms", updatedTerms, { shouldValidate: true });
+	};
 
 	return (
 		<form onSubmit={form.handleSubmit(onSubmit)}>
@@ -210,25 +244,38 @@ export function GradeFeeAssignmentForm({ handleClose, selectedFeeItem }: GradeFe
 						</Field>
 					)}
 				/>}
-				{frequency == "per_term" &&
-					<div className="flex flex-col gap-3">
-						{terms.map((term) => (
-							<div
-								key={term}
-								className="flex items-center rounded-md border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring"
-							>
-								<Label className="px-3 py-2 bg-muted text-muted-foreground text-sm font-mono border-r border-input min-w-[90px]">
-									{term}
-								</Label>
-								<Input
-									type="number"
-									placeholder="0.00"
-									className="border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
-								/>
-							</div>
-						))}
-					</div>
-				}
+
+				{frequency == "per_term" && <Controller
+					name="terms"
+					control={form.control}
+					render={({ field, fieldState }) => (
+						<div className="flex flex-col gap-3">
+							{termsQuery.isLoading && <LoaderCircle className="animate-spin" />}
+
+							{termsQuery.error && <p className="text-red">{termsQuery.error.message}</p>}
+
+							{termsQuery.data?.map((term) => (
+								<Field data-invalid={fieldState.invalid}
+									key={term.id}
+								>
+									<div className="flex rounded-md border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring">
+										<FieldLabel className="px-3 py-2 bg-muted text-muted-foreground text-sm font-mono border-r border-input">
+											{term.name}
+										</FieldLabel>
+										<Input
+											type="number"
+											placeholder="0.00"
+											className="border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
+											onChange={(e) => handleTermAmountChange(term.id, e.target.value)}
+										/>
+									</div>
+									{fieldState.invalid && (
+										<FieldError errors={[fieldState.error]} />
+									)}
+								</Field>
+							))}
+						</div>)}
+				/>}
 
 				<div className="flex justify-end gap-4">
 					<Button
